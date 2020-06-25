@@ -62,7 +62,6 @@ public class Polyline implements Serializable {
    *
    * @param tolerance [rad]
    * @return
-   * @author wuesten
    */
   public static Polyline eleminateNonCorners(double tolerance) {
     return null; // TODO
