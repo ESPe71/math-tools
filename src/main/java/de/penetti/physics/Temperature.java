@@ -78,7 +78,7 @@ public final class Temperature
    *
    * @param obj
    * @return
-   * @see #equals(de.penetti.core.physics.Temperature, de.penetti.core.physics.Temperature)
+   * @see #equals(de.penetti.physics.Temperature, de.penetti.physics.Temperature)
    */
   @Override
   public boolean equals(Object obj)
