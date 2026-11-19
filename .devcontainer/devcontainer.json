@@ -1,11 +1,13 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "features": {
     "ghcr.io/devcontainers/features/java:1": {
       "version": "11",
       "installMaven": "true"
     },
-    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "nodeGypDependencies": false
+    },
     "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
   }
 }
