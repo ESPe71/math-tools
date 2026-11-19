@@ -16,7 +16,6 @@
  */
 package de.penetti.physics;
 
-import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
 /**
@@ -59,7 +58,7 @@ public final class Resolution
 
   public String getText()
   {
-    NumberFormat numberFmt = DecimalFormat.getNumberInstance();
+    NumberFormat numberFmt = NumberFormat.getNumberInstance();
     Length len = getLength();
     StringBuilder sb = new StringBuilder();
     sb.append(getDots())

@@ -15,7 +15,7 @@ halbfertige Stellen und einzelne echte Bugs.
 
 1. [ ] `MathUtil.adjustAngle` gegen Endlosschleife absichern
 2. [ ] `Vector.random` und `Line.normal()` korrigieren
-3. [x] `ByteUnitTest` locale-stabil machen (Test setzt Locale selbst, `NumberFormat` pro Aufruf)
+3. [x] `ByteUnitTest` und `ResolutionTest` locale-stabil machen (Tests setzen Locale selbst, `NumberFormat` pro Aufruf)
 4. [ ] Epsilon-Behandlung in `Line` und `Vector` vereinheitlichen
 5. [ ] `Polyline.centroid` korrigieren, `eleminateNonCorners`-Stub entfernen
 6. [ ] `Roman`-Parsing validieren

@@ -16,6 +16,10 @@
  */
 package de.penetti.physics;
 
+import java.util.Locale;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,6 +31,34 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 public class ResolutionTest
 {
+  private Locale defaultLocale;
+
+  @BeforeEach
+  public void setUpLocale()
+  {
+    defaultLocale = Locale.getDefault();
+  }
+
+  @AfterEach
+  public void tearDownLocale()
+  {
+    Locale.setDefault(defaultLocale);
+  }
+
+  @Test
+  public void testGetText_german()
+  {
+    Locale.setDefault(Locale.GERMANY);
+    assertEquals("300px/2,5in", new Resolution(300, new Length(2.5, LengthUnit.INCH)).getText());
+  }
+
+  @Test
+  public void testGetText_us()
+  {
+    Locale.setDefault(Locale.US);
+    assertEquals("300px/2.5in", new Resolution(300, new Length(2.5, LengthUnit.INCH)).getText());
+  }
+
   @Test
   public void testResolution_superficial()
   {
