@@ -1,7 +1,8 @@
 # Refaktoring – Einschätzung zu `de.penetti.*`
 
 Stand: 2026-11-19. Grundlage: Durchsicht des Quellcodes und der Tests sowie der vorhandenen
-Surefire-Reports in `target/` (die Tests wurden dabei nicht neu ausgeführt).
+Surefire-Reports in `target/`. Inzwischen erledigte Punkte sind mit `[x]` markiert; alle 1516 Tests
+laufen unter Java 25 durch.
 
 ## Gesamteindruck
 
@@ -14,7 +15,7 @@ halbfertige Stellen und einzelne echte Bugs.
 
 1. [ ] `MathUtil.adjustAngle` gegen Endlosschleife absichern
 2. [ ] `Vector.random` und `Line.normal()` korrigieren
-3. [ ] `ByteUnitTest` locale-stabil machen
+3. [x] `ByteUnitTest` locale-stabil machen (Test setzt Locale selbst, `NumberFormat` pro Aufruf)
 4. [ ] Epsilon-Behandlung in `Line` und `Vector` vereinheitlichen
 5. [ ] `Polyline.centroid` korrigieren, `eleminateNonCorners`-Stub entfernen
 6. [ ] `Roman`-Parsing validieren
@@ -57,7 +58,6 @@ halbfertige Stellen und einzelne echte Bugs.
   - `getBytes()` / `new String(...)` nutzen den Plattform-Charset → UTF-8 explizit angeben.
   - Name kollidiert mit `java.util.Base64` (überall voll qualifiziert).
 - **`Line`**: Jama wird nur für ein 2×2-Gleichungssystem geladen; Cramersche Regel genügt und spart die Abhängigkeit.
-- **`ByteUnit`**: Statisches `NumberFormat` ist nicht thread-safe.
 
 ## Tests
 
@@ -65,7 +65,6 @@ halbfertige Stellen und einzelne echte Bugs.
 
 **Schwächen:**
 
-- `ByteUnitTest` hat laut Report 2 Fehlschläge: erwartet `1,5 KiB`, geliefert `1.5 KiB`. Die Tests setzen eine deutsche Default-Locale voraus. Locale im Test fixieren oder Format locale-unabhängig machen.
 - `LineTest.testConstructorWithNullPoints_1` ist identisch zu `testConstructorWithNullLine` (Copy-Paste).
 - `Base64Test` hängt vom Arbeitsverzeichnis ab (`target/cat.txt`) → `@TempDir` verwenden.
 - Fehlende Tests für: `adjustAngle(NaN/∞)`, `Arc` mit `bulge = 0` und Vollkreis, ungültige römische Strings, vertikale Linien bei `getSlope`.
@@ -75,6 +74,6 @@ halbfertige Stellen und einzelne echte Bugs.
 
 ## Build
 
-- JUnit 5.6.0 und `maven-compiler-plugin` 3.8.1 sind veraltet.
-- `maven-surefire-plugin` nicht explizit gepinnt → für reproduzierbare Builds Version festlegen.
-- Java 11 ist ok; bei höherer Zielversion ließe sich einiges vereinfachen (`record`, `switch`-Ausdrücke).
+- [x] Umstellung auf Java 25 (`<release>25</release>`, Devcontainer), `maven-compiler-plugin` 3.16.0, `maven-resources-plugin` 3.5.0, JUnit 6.1.3.
+- [x] `maven-surefire-plugin` auf 3.6.1 gepinnt.
+- Offen: Mit Java 25 ließe sich einiges vereinfachen (`record`, `switch`-Ausdrücke, `var`), z. B. bei `Vector`, `Tuple` und den Intersection-Klassen.
