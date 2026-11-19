@@ -12,6 +12,10 @@
  */
 package de.penetti.physics;
 
+import java.util.Locale;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static de.penetti.physics.ByteUnit.Binary;
@@ -25,6 +29,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class ByteUnitTest
 {
+  private Locale defaultLocale;
+
+  @BeforeEach
+  public void setUpLocale()
+  {
+    defaultLocale = Locale.getDefault();
+    Locale.setDefault(Locale.GERMANY);
+  }
+
+  @AfterEach
+  public void tearDownLocale()
+  {
+    Locale.setDefault(defaultLocale);
+  }
+
   @Test
   public void testValues()
   {

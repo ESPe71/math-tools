@@ -62,8 +62,6 @@ public enum ByteUnit
     }
   };
 
-  private static final NumberFormat NUMBERFORMAT = NumberFormat.getNumberInstance();
-
   @SuppressWarnings("checkstyle:visibilitymodifier")
   protected final ResourceBundle resource = ResourceBundle.getBundle("de.penetti.physics.byteunit");
 
@@ -78,6 +76,6 @@ public enum ByteUnit
     {
       dSize /= dMultiple;
     }
-    return String.format("%s %s", NUMBERFORMAT.format(dSize), units[i]);
+    return String.format("%s %s", NumberFormat.getNumberInstance().format(dSize), units[i]);
   }
 }
