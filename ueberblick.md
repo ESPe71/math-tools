@@ -2,44 +2,43 @@
 
 Das Projekt hat 17 Klassen in vier Paketen unter `de.penetti`. Die einzige Abhängigkeit nach außen ist Jama (Matrizen).
 
+### `de.penetti.math`
+
 ```mermaid
 graph TD
-  subgraph math["de.penetti.math"]
-    MathUtil
-    Numbers
-    NumbersInterval
-    NumberRange
-    Tuple
-    Roman
-  end
-  subgraph geom["de.penetti.math.geom"]
-    Vector
-    Line
-    Polyline
-    Arc
-  end
-  subgraph physics["de.penetti.physics"]
-    LengthUnit
-    Length
-    Resolution
-    TemperatureUnit
-    Temperature
-    ByteUnit
-  end
-  subgraph util["de.penetti.util"]
-    Base64
-  end
-
   NumberRange --> NumbersInterval
   NumberRange --> Numbers
+  MathUtil
+  Tuple
+  Roman
+```
+
+### `de.penetti.math.geom`
+
+```mermaid
+graph TD
   Line --> Vector
   Polyline --> Vector
   Polyline --> Line
   Arc --> Vector
-  Arc --> Tuple
+  Arc -.-> Tuple["Tuple (de.penetti.math)"]
+```
+
+### `de.penetti.physics`
+
+```mermaid
+graph TD
   Length --> LengthUnit
   Resolution --> Length
   Temperature --> TemperatureUnit
+  ByteUnit
+```
+
+### `de.penetti.util`
+
+```mermaid
+graph TD
+  Base64
 ```
 
 Die Pfeile sind zum Teil aus `import`-Anweisungen und Methodensignaturen abgeleitet und nicht alle im Code geprüft. Bei `NumberRange → Numbers` und `Line → Vector` bin ich nicht ganz sicher.
