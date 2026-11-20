@@ -122,11 +122,26 @@ Gepflegt werden müssen nun zwei gleiche Dateien (`temperatureunit.properties` u
 Default-Locale-Fallback wurde wieder verworfen: Er schaltete das übliche Java-Verhalten für alle
 Sprachen ab, nur um diesen einen Fall zu lösen, und funktioniert nicht in benannten Modulen.
 
-### 7. Dokumentation
+### 7. Dokumentation (erledigt)
 Es fehlt Javadoc für die Klasse und die öffentlichen Methoden. Wichtig wären vor allem:
 - Die Formeln rechnen absolute Temperaturen, keine Differenzen.
 - Reihenfolge der Konstruktorparameter (`fromKelvin`, dann `toKelvin`) ist leicht zu verwechseln.
 - Verhalten von `getBySign` (Groß-/Kleinschreibung, Weglassen von `°`).
+
+**Umgesetzt.** `javadoc -Xdoclint:all` meldet für die öffentliche API von `TemperatureUnit` keine
+Warnungen mehr.
+
+- Klassen-Javadoc: Überblick, und die Unterscheidung zwischen absoluter Umrechnung
+  (`getValue`, mit Nullpunkt) und Differenzumrechnung (`convertDifference`, nur Skala).
+- Konstruktor: Reihenfolge der Parameter (`fromKelvin` vor `toKelvin`) ausdrücklich genannt, dazu
+  die Bedeutung von `kelvinPerDegree`. Über der Konstantentabelle steht eine Spaltenüberschrift
+  als Kommentar.
+- Jede Konstante hat einen Satz mit den Fixpunkten der Skala (z. B. Delisle: Wasser siedet bei
+  0 °De und gefriert bei 150 °De).
+- `getUnitSign()` und die Instanzmethode `getValue(double, TemperatureUnit)` sind beschrieben, mit
+  Verweisen auf die statische Variante und auf `convertDifference`.
+- Schon vorher dokumentiert (Punkte 3 bis 6): `getBySign`, statisches `getValue`,
+  `convertDifference`, `getName()` und `getName(Locale)`, `toString()`.
 
 ## Empfohlene Reihenfolge
 
@@ -134,7 +149,7 @@ Es fehlt Javadoc für die Klasse und die öffentlichen Methoden. Wichtig wären 
 2. Punkt 3 (Map statt Schleife) zusammen mit der Entscheidung zur Groß-/Kleinschreibung. *Punkt 3 ist erledigt (Map; Groß-/Kleinschreibung bleibt unterschieden und ist dokumentiert).*
 3. Punkt 4, sobald `Temperature` weitere Differenz-Operationen bekommt. *Punkt 4 ist erledigt.*
 4. Punkt 6 nur, wenn Mehrsprachigkeit im Betrieb tatsächlich gebraucht wird. *Punkt 6 ist erledigt.*
-5. Punkt 7 laufend.
+5. Punkt 7 laufend. *Punkt 7 ist erledigt.*
 
 ## Was ich lassen würde
 

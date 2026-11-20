@@ -24,19 +24,40 @@ import java.util.ResourceBundle;
 import java.util.function.DoubleUnaryOperator;
 
 /**
+ * Temperature scales and the conversion between them: Celsius, Kelvin, Fahrenheit, Rankine, Réaumur, Rømer, Delisle and Newton.
+ * <p>
+ * Two kinds of conversion exist and must not be mixed up:
+ * <ul>
+ * <li>{@link #getValue(double, TemperatureUnit, TemperatureUnit)} converts an <em>absolute</em> temperature and respects the zero
+ * point of each scale (0 °C is 273.15 K).</li>
+ * <li>{@link #convertDifference(double, TemperatureUnit)} converts a temperature <em>difference</em> (a tolerance, a delta) and
+ * applies only the scale (a difference of 1 °C is 1 K).</li>
+ * </ul>
+ * Each constant carries a unit sign, the conversion functions from and to Kelvin (the common base of all conversions) and its scale
+ * in Kelvin per degree. Names are localized, see {@link #getName(Locale)}; signs can be looked up with {@link #getBySign(String)}.
  *
  * @author Enrico S. Penetti &lt;enrico@penetti.de&gt;
+ * @see Temperature
  */
 @SuppressWarnings("checkstyle:magicnumber")
 public enum TemperatureUnit
 {
+  // sign, from Kelvin to this unit, from this unit to Kelvin, scale in Kelvin per degree (negative if the scale runs backwards)
+  /** Degree Celsius: 0 °C is the freezing point and 100 °C the boiling point of water. */
   CELSIUS   ("°C",  d -> d - 273.15,                       d -> d + 273.15,                       1.),
+  /** Kelvin, the SI unit: 0 K is absolute zero. All conversions run via Kelvin. */
   KELVIN    ("K",   d -> d,                                d -> d,                                1.),
+  /** Degree Fahrenheit: water freezes at 32 °F and boils at 212 °F. */
   FAHRENHEIT("°F",  d -> d * 1.8 - 459.67,                 d -> (d + 459.67) * (5.0 / 9.0),       5. / 9.),
+  /** Degree Rankine: degrees of Fahrenheit size, counted from absolute zero (0 °Ra). */
   RANKINE   ("°Ra", d -> d * 1.8,                          d -> d * (5.0 / 9.0),                  5. / 9.),
+  /** Degree Réaumur: water freezes at 0 °Ré and boils at 80 °Ré. */
   REAUMUR   ("°Ré", d -> (d - 273.15) * .8,                d -> d * 1.25 + 273.15,                1.25),
+  /** Degree Rømer: water freezes at 7.5 °Rø and boils at 60 °Rø. */
   ROMER     ("°Rø", d -> (d - 273.15) * (21. / 40.) + 7.5, d -> (d - 7.5) * (40. / 21.) + 273.15, 40. / 21.),
+  /** Degree Delisle: a backwards scale, water boils at 0 °De and freezes at 150 °De. */
   DELISLE   ("°De", d -> (373.15 - d) * 1.5,               d -> 373.15 - d * (2. / 3.),           -2. / 3.),
+  /** Degree Newton: water freezes at 0 °N and boils at 33 °N. */
   NEWTON    ("°N",  d -> (d - 273.15) * .33,               d -> d * (100. / 33.) + 273.15,        100. / 33.);
 
   private static final String RESOURCE_BASE_NAME = "de.penetti.physics.temperatureunit";
@@ -51,6 +72,15 @@ public enum TemperatureUnit
   private final DoubleUnaryOperator fromKelvin;
   private final DoubleUnaryOperator toKelvin;
   private final double kelvinPerDegree;
+  /**
+   * Defines a temperature unit.
+   *
+   * @param unitSign the unit sign, e.g. "°C"
+   * @param fromKelvin converts an absolute temperature from Kelvin to this unit (note the order: from Kelvin first, then to Kelvin)
+   * @param toKelvin converts an absolute temperature from this unit to Kelvin
+   * @param kelvinPerDegree the size of one degree of this unit in Kelvin, negative if the scale runs backwards (Delisle); only used
+   *        for differences, see {@link #convertDifference(double, TemperatureUnit)}
+   */
   TemperatureUnit(String unitSign, DoubleUnaryOperator fromKelvin, DoubleUnaryOperator toKelvin, double kelvinPerDegree)
   {
     this.unitSign = unitSign;
@@ -86,10 +116,25 @@ public enum TemperatureUnit
                    .replace(SMALL_STROKE_O, SMALL_O);
   }
 
+  /**
+   * Returns the sign of this unit as it is written after a value.
+   *
+   * @return the unit sign including the degree sign where the unit has one, e.g. "°C", "°Ré" or "K"
+   */
   public String getUnitSign()
   {
     return unitSign;
   }
+
+  /**
+   * Converts an absolute temperature from this unit to another.
+   *
+   * @param value the temperature in this unit
+   * @param toUnit the unit of the result
+   * @return the temperature in {@code toUnit}
+   * @see #getValue(double, TemperatureUnit, TemperatureUnit)
+   * @see #convertDifference(double, TemperatureUnit) for temperature differences
+   */
   public double getValue(double value, TemperatureUnit toUnit)
   {
     return getValue(value, this, toUnit);
