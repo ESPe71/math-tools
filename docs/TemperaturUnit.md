@@ -155,3 +155,48 @@ Warnungen mehr.
 
 Das Enum selbst, die Lambdas als Datenfelder, die `Optional`-Rückgabe von `getBySign` und die
 Umrechnung über Kelvin als gemeinsame Basis.
+
+## Einschätzung nach den Änderungen (Stand 20.11.2026)
+
+Deutlich besser als zu Beginn. Die Formeln stimmten schon vorher; jetzt ist die Klasse auch sauber
+gebaut, dokumentiert und getestet (alle sieben Punkte oben sind erledigt).
+
+### Was jetzt gut ist
+
+- **Zwei klar getrennte Umrechnungen.** `getValue` rechnet absolute Temperaturen,
+  `convertDifference` rechnet Differenzen; das Javadoc sagt, wann man welche braucht. Der
+  Delta-Fehler aus `Temperature` kann so nicht mehr entstehen.
+- **Gleiche Einheit ohne Rundungsverlust**, und die Konsistenzprüfung der Skalen über alle 64
+  Einheitenpaare fängt falsch eingetragene Faktoren ab.
+- **Lokalisierung folgt dem Projekt.** `getName()` verwendet die Default-Locale beim Aufruf,
+  `getName(Locale)` ist getestet (en, de, fr, es), die Schlüssel hängen an `name()`.
+- **Vollständiges Javadoc.** Jede Konstante nennt die Fixpunkte ihrer Skala;
+  `javadoc -Xdoclint:all` meldet für die öffentliche API keine Warnungen.
+
+### Was noch stört (offen)
+
+1. **Der Skalenfaktor steht doppelt in der Klasse.** Er steckt in den beiden Lambdas und noch
+   einmal als vierter Konstruktorparameter (`kelvinPerDegree`); dass beides zusammenpasst, sichert
+   nur ein Test. Alle acht Skalen sind linear (`K = Faktor * d + Offset`). Zwei Zahlen pro Einheit
+   würden Lambdas, `kelvinPerDegree` und den Konsistenztest ersetzen. Preis: Die Ergebnisse
+   weichen in den letzten Stellen von den jetzigen Formeln ab, und mehrere Tests vergleichen exakt
+   (z. B. `-459.67` bei Fahrenheit). Nicht ohne Bedarf umbauen.
+2. **`getBySign(null)` wirft eine `NullPointerException`**, was nirgends dokumentiert ist. Führende
+   und abschließende Leerzeichen werden nicht entfernt (`" °C"` findet nichts). Das ist der einzige
+   Punkt mit echtem Absturz und deshalb der erste Kandidat.
+3. **Zwei identische Properties-Dateien.** `temperatureunit.properties` und
+   `temperatureunit_en.properties` müssen gleich bleiben, ein Test erzwingt es nicht. Ein Test, der
+   beide Dateien vergleicht, wäre billig.
+4. **Kleinigkeiten im Aufbau.** Die `static`-Map steht mitten in der Klasse zwischen Konstruktor und
+   Methoden; die vier `SMALL_...`-Konstanten sind viel Aufwand für drei `replace`-Aufrufe; zwischen
+   manchen Methoden fehlt eine Leerzeile.
+
+### Nicht geprüft
+
+`Temperature` hat noch die Punkte aus der ersten Einschätzung offen: keine Validierung von `NaN`,
+`null`-Einheit oder Werten unter dem absoluten Nullpunkt, kein `toString()`, kein `Comparable`.
+
+### Empfehlung
+
+Zuerst Punkt 2 (Absturz bei `null`), danach Punkt 3 (kleiner, lohnender Test). Punkt 1 und 4 nur bei
+konkretem Anlass.
