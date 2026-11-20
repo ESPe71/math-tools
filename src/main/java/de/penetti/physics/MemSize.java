@@ -173,9 +173,10 @@ public final class MemSize implements Comparable<MemSize> {
   }
 
   /**
-   * Parst einen String (z.B. "1024 MB", "1.5 GiB") in eine MemSize. Dezimal- und
-   * Tausendertrennzeichen richten sich nach der aktuell gesetzten Default-Locale
-   * (englisch "1.5 GiB", deutsch "1,5 GiB").
+   * Parst einen String (z.B. "1024 MB", "1.5 GiB") in eine MemSize, unabhängig von der
+   * Default-Locale: Punkt ist das Dezimal-, Komma das Tausendertrennzeichen ("1,234.5 KB").
+   * Geeignet für Konfigurationen, Argumente und Protokolle. Für Benutzereingaben in der
+   * Schreibweise der aktuellen Locale siehe {@link #parseLocalized(String)}.
    * Nutzt das Pattern aus MemSizeUnit.
    *
    * @param sizeString Der String zur Speicherung.
@@ -183,6 +184,25 @@ public final class MemSize implements Comparable<MemSize> {
    * @throws IllegalArgumentException Wenn das Format ungültig ist.
    */
   public static MemSize parse(String sizeString) {
+    return parse(sizeString, DecimalFormatSymbols.getInstance(Locale.ROOT));
+  }
+
+  /**
+   * Wie {@link #parse(String)}, aber Dezimal- und Tausendertrennzeichen richten sich nach der
+   * aktuell gesetzten Default-Locale (englisch "1.5 GiB", deutsch "1,5 GiB"). Das Gegenstück zu
+   * {@link #toString(MemSizeUnit)} und {@link #humanReadable()}, die dieselbe Locale nutzen.
+   * Das Ergebnis hängt von der Locale des Rechners ab, deshalb nicht für Konfigurationen
+   * verwenden.
+   *
+   * @param sizeString Der String zur Speicherung.
+   * @return Die MemSize-Instanz.
+   * @throws IllegalArgumentException Wenn das Format in der aktuellen Locale ungültig ist.
+   */
+  public static MemSize parseLocalized(String sizeString) {
+    return parse(sizeString, DecimalFormatSymbols.getInstance());
+  }
+
+  private static MemSize parse(String sizeString, DecimalFormatSymbols symbols) {
     if (sizeString == null || sizeString.isBlank()) {
       return MemSize.ofBytes(0);
     }
@@ -201,7 +221,7 @@ public final class MemSize implements Comparable<MemSize> {
 
     // Wir verwenden BigDecimal für das Parsen der Zahl, um Nachkommastellen zu unterstützen,
     // runden dann aber auf Bytes (BigInteger) auf.
-    BigDecimal number = parseNumber(numberStr);
+    BigDecimal number = parseNumber(numberStr, symbols);
 
     if (number.signum() < 0) {
       throw new IllegalArgumentException("Speichergröße darf nicht negativ sein");
@@ -216,14 +236,12 @@ public final class MemSize implements Comparable<MemSize> {
   }
 
   /**
-   * Liest eine Zahl gemäß der aktuell gesetzten Default-Locale: Dezimal- und
-   * Tausendertrennzeichen stammen aus {@link DecimalFormatSymbols}. Das Tausendertrennzeichen
+   * Liest eine Zahl mit den Trennzeichen aus {@code symbols}. Das Tausendertrennzeichen
    * ist nur in Dreiergruppen gültig ("1.000" im Deutschen, "1,000" im Englischen), damit eine
    * Eingabe in der falschen Schreibweise (z.B. "1,5" bei englischer Locale) mit einer
    * Fehlermeldung abgelehnt wird, statt still einen falschen Wert zu ergeben.
    */
-  private static BigDecimal parseNumber(String text) {
-    DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance();
+  private static BigDecimal parseNumber(String text, DecimalFormatSymbols symbols) {
     String decimal = String.valueOf(symbols.getDecimalSeparator());
     String grouping = String.valueOf(symbols.getGroupingSeparator());
 

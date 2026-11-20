@@ -113,43 +113,59 @@ public class MemSizeTest {
   }
 
   @Test
-  public void parseUsesDefaultLocaleGerman() {
+  public void parseIsIndependentOfDefaultLocale() {
+    for (Locale locale : new Locale[] {Locale.US, Locale.GERMANY, Locale.FRANCE}) {
+      Locale.setDefault(locale);
+      assertEquals(BigInteger.valueOf(1500), MemSize.parse("1.5 KB").getBytes(), locale.toString());
+      assertEquals(BigInteger.valueOf(1_000_000), MemSize.parse("1,000 KB").getBytes(),
+          locale.toString());
+      assertEquals(BigInteger.valueOf(1_234_500), MemSize.parse("1,234.5 KB").getBytes(),
+          locale.toString());
+      assertEquals(new MemSize("1.5 KB"), MemSize.parse("1.5 KB"), locale.toString());
+      assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1,5 KB"));
+      assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1,5,5 KB"));
+      assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1.234,5 KB"));
+    }
+  }
+
+  @Test
+  public void parseLocalizedGerman() {
     Locale.setDefault(Locale.GERMANY);
-    assertEquals(BigInteger.valueOf(1500), MemSize.parse("1,5 KB").getBytes());
-    assertEquals(BigInteger.valueOf(1536), MemSize.parse("1,5 KiB").getBytes());
-    assertEquals(BigInteger.valueOf(500), MemSize.parse(",5 KB").getBytes());
-    assertEquals(BigInteger.valueOf(1_000_000), MemSize.parse("1.000 KB").getBytes());
-    assertEquals(BigInteger.valueOf(1_234_500), MemSize.parse("1.234,5 KB").getBytes());
-    assertEquals(BigInteger.valueOf(2048), MemSize.parse("2048").getBytes());
+    assertEquals(BigInteger.valueOf(1500), MemSize.parseLocalized("1,5 KB").getBytes());
+    assertEquals(BigInteger.valueOf(1536), MemSize.parseLocalized("1,5 KiB").getBytes());
+    assertEquals(BigInteger.valueOf(500), MemSize.parseLocalized(",5 KB").getBytes());
+    assertEquals(BigInteger.valueOf(1_000_000), MemSize.parseLocalized("1.000 KB").getBytes());
+    assertEquals(BigInteger.valueOf(1_234_500), MemSize.parseLocalized("1.234,5 KB").getBytes());
+    assertEquals(BigInteger.valueOf(2048), MemSize.parseLocalized("2048").getBytes());
   }
 
   @Test
-  public void parseUsesDefaultLocaleEnglish() {
-    assertEquals(BigInteger.valueOf(1500), MemSize.parse("1.5 KB").getBytes());
-    assertEquals(BigInteger.valueOf(1_000_000), MemSize.parse("1,000 KB").getBytes());
-    assertEquals(BigInteger.valueOf(1_234_500), MemSize.parse("1,234.5 KB").getBytes());
+  public void parseLocalizedEnglish() {
+    assertEquals(BigInteger.valueOf(1500), MemSize.parseLocalized("1.5 KB").getBytes());
+    assertEquals(BigInteger.valueOf(1_000_000), MemSize.parseLocalized("1,000 KB").getBytes());
+    assertEquals(BigInteger.valueOf(1_234_500), MemSize.parseLocalized("1,234.5 KB").getBytes());
   }
 
   @Test
-  public void parseRejectsWrongLocaleNotation() {
+  public void parseLocalizedRejectsWrongNotation() {
     // Englisch: Komma ist Tausendertrennzeichen und nur in Dreiergruppen gültig
-    assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1,5 KB"));
-    assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1,5,5 KB"));
-    assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1.5.5 KB"));
-    assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1,0000 KB"));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.parseLocalized("1,5 KB"));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.parseLocalized("1,5,5 KB"));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.parseLocalized("1.5.5 KB"));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.parseLocalized("1,0000 KB"));
     // Deutsch: Punkt ist Tausendertrennzeichen und nur in Dreiergruppen gültig
     Locale.setDefault(Locale.GERMANY);
-    assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1.5 KB"));
-    assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1,000.5 KB"));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.parseLocalized("1.5 KB"));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.parseLocalized("1,000.5 KB"));
   }
 
   @Test
-  public void parseRoundTripsToString() {
+  public void parseLocalizedRoundTripsToString() {
     MemSize size = MemSize.of(1234.5, MemSizeUnit.KB);
     for (Locale locale : new Locale[] {Locale.GERMANY, Locale.US, Locale.FRANCE}) {
       Locale.setDefault(locale);
-      assertEquals(size, MemSize.parse(size.toString(MemSizeUnit.KB)), locale.toString());
-      assertEquals(size, MemSize.parse(size.toString(MemSizeUnit.Byte)), locale.toString());
+      assertEquals(size, MemSize.parseLocalized(size.toString(MemSizeUnit.KB)), locale.toString());
+      assertEquals(size, MemSize.parseLocalized(size.toString(MemSizeUnit.Byte)), locale.toString());
     }
   }
 
