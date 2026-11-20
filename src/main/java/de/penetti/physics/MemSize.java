@@ -245,19 +245,6 @@ public final class MemSize implements Comparable<MemSize> {
   }
 
   /**
-   * Vergleicht diese MemSize mit einer anderen Instanz auf Gleichheit.
-   *
-   * @param other Die andere MemSize-Instanz.
-   * @return true, wenn beide Instanzen die gleiche Anzahl an Bytes haben.
-   */
-  public boolean isEqualTo(MemSize other) {
-    if (other == null) {
-      return false;
-    }
-    return this.bytes.equals(other.bytes);
-  }
-
-  /**
    * Vergleicht diese MemSize mit einer anderen Instanz.
    *
    * @param other Die andere MemSize-Instanz.

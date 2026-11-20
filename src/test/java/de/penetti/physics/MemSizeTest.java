@@ -405,13 +405,6 @@ public class MemSizeTest {
   }
 
   @Test
-  public void isEqualTo() {
-    assertTrue(MemSize.parse("1 KiB").isEqualTo(MemSize.ofBytes(1024)));
-    assertFalse(MemSize.ofBytes(1).isEqualTo(MemSize.ofBytes(2)));
-    assertFalse(MemSize.ofBytes(1).isEqualTo(null));
-  }
-
-  @Test
   public void equalsAndHashCode() {
     MemSize a = MemSize.ofBytes(1024);
     MemSize b = MemSize.of(1L, MemSizeUnit.KiB);
