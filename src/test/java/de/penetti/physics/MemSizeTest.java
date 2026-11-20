@@ -311,6 +311,29 @@ public class MemSizeTest {
   }
 
   @Test
+  public void humanReadableRoundsUpToNextUnit() {
+    assertEquals("1 MB", MemSize.ofBytes(999_999).humanReadable());
+    assertEquals("1 MB", MemSize.ofBytes(999_995).humanReadable());
+    assertEquals("999.99 KB", MemSize.ofBytes(999_994).humanReadable());
+    assertEquals("1 GB", MemSize.ofBytes(999_999_999).humanReadable());
+    assertEquals("1 MB", MemSize.ofBytes(999_500).humanReadable(0));
+    assertEquals("999 KB", MemSize.ofBytes(999_499).humanReadable(0));
+    assertEquals("999.5 KB", MemSize.ofBytes(999_499).humanReadable(1));
+  }
+
+  @Test
+  public void humanReadableBinaryRoundsUpToNextUnit() {
+    assertEquals("1 MiB", MemSize.ofBytes(1_048_575).humanReadable(MemSizeUnitType.Binary));
+    assertEquals("1,023.99 KiB", MemSize.ofBytes(1_048_565).humanReadable(MemSizeUnitType.Binary));
+  }
+
+  @Test
+  public void humanReadableLargestUnitCannotRoundUp() {
+    MemSize size = MemSize.of(new BigDecimal("999.999"), MemSizeUnit.YB);
+    assertEquals("1,000 YB", size.humanReadable(2));
+  }
+
+  @Test
   public void humanReadableBytesHaveNoFractionDigits() {
     assertEquals("999 B", MemSize.ofBytes(999).humanReadable(5));
     assertEquals("0 B", MemSize.ofBytes(0).humanReadable(5));

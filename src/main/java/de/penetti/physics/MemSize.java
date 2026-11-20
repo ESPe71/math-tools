@@ -381,9 +381,18 @@ public final class MemSize implements Comparable<MemSize> {
       return this.bytes + " B";
     }
 
+    // Rundet der Wert auf die nächste Einheit auf (z.B. 999,999 KB -> "1000 KB" bei 2 Stellen),
+    // stattdessen die nächstgrößere Einheit nehmen ("1 MB"). In der größten Einheit nicht möglich.
+    BigDecimal value = toUnit(bestUnit, maxFractionDigits);
+    int bestIndex = units.indexOf(bestUnit);
+    if (bestIndex < units.size() - 1 && value.compareTo(BigDecimal.valueOf(type.getBase())) >= 0) {
+      bestUnit = units.get(bestIndex + 1);
+      value = toUnit(bestUnit, maxFractionDigits);
+    }
+
     // Formatierung: höchstens maxFractionDigits Dezimalstellen, unnötige Nullen entfallen,
     // locale-abhängig. Direkt auf die gewünschte Stellenzahl rechnen (keine doppelte Rundung).
-    return format(toUnit(bestUnit, maxFractionDigits), maxFractionDigits) + " " + bestUnit.getSymbol();
+    return format(value, maxFractionDigits) + " " + bestUnit.getSymbol();
   }
 
   /**
