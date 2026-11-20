@@ -287,15 +287,11 @@ public final class MemSize implements Comparable<MemSize> {
    * @param other Die andere MemSize-Instanz.
    * @return einen negativen Wert, wenn diese Instanz kleiner ist,
    *         0, wenn sie gleich ist, und einen positiven Wert, wenn sie größer ist.
+   * @throws NullPointerException Wenn other null ist (gemäß Vertrag von {@link Comparable}).
    */
   @Override
   public int compareTo(MemSize other) {
-    if (other == null) {
-      // null wird als kleiner angesehen (oder man wirft eine NPE, je nach Vorgabe)
-      // Hier: this ist immer größer als null
-      return 1;
-    }
-    // BigInteger.compareTo ist effizient und korrekt
+    Objects.requireNonNull(other, "other darf nicht null sein");
     return this.bytes.compareTo(other.bytes);
   }
 

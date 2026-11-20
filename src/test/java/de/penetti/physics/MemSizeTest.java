@@ -284,7 +284,7 @@ public class MemSizeTest {
     assertTrue(small.compareTo(large) < 0);
     assertTrue(large.compareTo(small) > 0);
     assertEquals(0, small.compareTo(MemSize.ofBytes(1)));
-    assertEquals(1, small.compareTo(null));
+    assertThrows(NullPointerException.class, () -> small.compareTo(null));
   }
 
   @Test
