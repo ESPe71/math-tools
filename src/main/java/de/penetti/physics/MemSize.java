@@ -21,6 +21,12 @@ import java.util.regex.Pattern;
 @Getter
 public final class MemSize implements Comparable<MemSize> {
 
+  /** Höchste Anzahl Nachkommastellen in {@link #humanReadable()}. */
+  public static final int DEFAULT_HUMAN_READABLE_DIGITS = 2;
+
+  /** Höchste Anzahl Nachkommastellen in {@link #toString(MemSizeUnit)} und {@link #toUnit(MemSizeUnit)}. */
+  public static final int DEFAULT_TO_STRING_DIGITS = 10;
+
   private final BigInteger bytes;
 
   private MemSize(BigInteger bytes) {
@@ -205,10 +211,37 @@ public final class MemSize implements Comparable<MemSize> {
    * @return Die Größe als BigDecimal.
    */
   public BigDecimal toUnit(MemSizeUnit targetUnit) {
+    return toUnit(targetUnit, DEFAULT_TO_STRING_DIGITS);
+  }
+
+  /**
+   * Wie {@link #toUnit(MemSizeUnit)}, aber auf die angegebene Anzahl Nachkommastellen gerundet
+   * (HALF_UP).
+   *
+   * @param targetUnit Die Zieleinheit.
+   * @param scale      Die Anzahl der Nachkommastellen, mindestens 0.
+   * @return Die Größe als BigDecimal.
+   * @throws IllegalArgumentException Wenn scale negativ ist.
+   */
+  public BigDecimal toUnit(MemSizeUnit targetUnit, int scale) {
+    requireNonNegativeDigits(scale);
     // Division: Bytes / Faktor
     // Wir verwenden BigDecimal für die Division, um Nachkommastellen zu erhalten
     BigDecimal factor = new BigDecimal(targetUnit.getFactor());
-    return new BigDecimal(this.bytes).divide(factor, 10, RoundingMode.HALF_UP);
+    return new BigDecimal(this.bytes).divide(factor, scale, RoundingMode.HALF_UP);
+  }
+
+  private static void requireNonNegativeDigits(int digits) {
+    if (digits < 0) {
+      throw new IllegalArgumentException("Anzahl der Nachkommastellen darf nicht negativ sein: " + digits);
+    }
+  }
+
+  private static String format(BigDecimal value, int maxFractionDigits) {
+    NumberFormat numberFormat = NumberFormat.getNumberInstance();
+    numberFormat.setMaximumFractionDigits(maxFractionDigits);
+    numberFormat.setRoundingMode(RoundingMode.HALF_UP);
+    return numberFormat.format(value);
   }
 
   /**
@@ -264,11 +297,19 @@ public final class MemSize implements Comparable<MemSize> {
    *         Das Zahlenformat folgt der aktuell gesetzten {@link Locale#getDefault() Default-Locale}.
    */
   public String toString(MemSizeUnit targetUnit) {
-    BigDecimal targetValue = toUnit(targetUnit);
-    NumberFormat numberFormat = NumberFormat.getNumberInstance();
-    numberFormat.setMaximumFractionDigits(10);
-    numberFormat.setRoundingMode(RoundingMode.HALF_UP);
-    return numberFormat.format(targetValue) + " " + targetUnit.getSymbol();
+    return toString(targetUnit, DEFAULT_TO_STRING_DIGITS);
+  }
+
+  /**
+   * Wie {@link #toString(MemSizeUnit)}, aber mit höchstens {@code maxFractionDigits}
+   * Nachkommastellen (gerundet HALF_UP, unnötige Nullen entfallen).
+   *
+   * @param targetUnit        Die Ziel-Einheit.
+   * @param maxFractionDigits Die höchste Anzahl Nachkommastellen, mindestens 0.
+   * @throws IllegalArgumentException Wenn maxFractionDigits negativ ist.
+   */
+  public String toString(MemSizeUnit targetUnit, int maxFractionDigits) {
+    return format(toUnit(targetUnit, maxFractionDigits), maxFractionDigits) + " " + targetUnit.getSymbol();
   }
 
   /**
@@ -281,6 +322,20 @@ public final class MemSize implements Comparable<MemSize> {
    *         {@link Locale#getDefault() Default-Locale} (z.B. "1,5 KiB" für Deutsch, "1.5 KiB" für Englisch).
    */
   public String humanReadable(MemSizeUnitType type) {
+    return humanReadable(type, DEFAULT_HUMAN_READABLE_DIGITS);
+  }
+
+  /**
+   * Wie {@link #humanReadable(MemSizeUnitType)}, aber mit höchstens {@code maxFractionDigits}
+   * Nachkommastellen (gerundet HALF_UP, unnötige Nullen entfallen). Bei Werten unter der
+   * kleinsten Einheit (ganze Bytes) gibt es keine Nachkommastellen.
+   *
+   * @param type              Der zu verwendende Einheitentyp.
+   * @param maxFractionDigits Die höchste Anzahl Nachkommastellen, mindestens 0.
+   * @throws IllegalArgumentException Wenn maxFractionDigits negativ ist.
+   */
+  public String humanReadable(MemSizeUnitType type, int maxFractionDigits) {
+    requireNonNegativeDigits(maxFractionDigits);
     // Fall 0: Wenn 0 Bytes, direkt zurückgeben
     if (this.bytes.equals(BigInteger.ZERO)) {
       return "0 B";
@@ -307,7 +362,6 @@ public final class MemSize implements Comparable<MemSize> {
     }
 
     MemSizeUnit bestUnit = null;
-    BigDecimal bestValue = null;
 
     // Wir durchsuchen die Einheiten von klein nach groß.
     // Wir suchen die größte Einheit, bei der der Wert >= 1 ist.
@@ -316,7 +370,6 @@ public final class MemSize implements Comparable<MemSize> {
 
       if (value.compareTo(BigDecimal.ONE) >= 0) {
         bestUnit = unit;
-        bestValue = value;
       } else {
         // Sobald der Wert < 1 ist, sind alle größeren Einheiten noch kleiner.
         break;
@@ -324,15 +377,22 @@ public final class MemSize implements Comparable<MemSize> {
     }
 
     // Fallback (sollte aufgrund der vorherigen Byte-Prüfung nicht nötig sein)
-    if (bestValue == null) {
+    if (bestUnit == null) {
       return this.bytes + " B";
     }
 
-    // Formatierung: Maximal 2 Dezimalstellen, unnötige Nullen entfallen, locale-abhängig
-    NumberFormat numberFormat = NumberFormat.getNumberInstance();
-    numberFormat.setMaximumFractionDigits(2);
-    numberFormat.setRoundingMode(RoundingMode.HALF_UP);
-    return numberFormat.format(bestValue) + " " + bestUnit.getSymbol();
+    // Formatierung: höchstens maxFractionDigits Dezimalstellen, unnötige Nullen entfallen,
+    // locale-abhängig. Direkt auf die gewünschte Stellenzahl rechnen (keine doppelte Rundung).
+    return format(toUnit(bestUnit, maxFractionDigits), maxFractionDigits) + " " + bestUnit.getSymbol();
+  }
+
+  /**
+   * Wie {@link #humanReadable()}, aber mit höchstens {@code maxFractionDigits} Nachkommastellen.
+   *
+   * @throws IllegalArgumentException Wenn maxFractionDigits negativ ist.
+   */
+  public String humanReadable(int maxFractionDigits) {
+    return humanReadable(MemSizeUnitType.Decimal, maxFractionDigits);
   }
 
   /**

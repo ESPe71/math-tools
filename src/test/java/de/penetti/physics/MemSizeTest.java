@@ -270,6 +270,86 @@ public class MemSizeTest {
     assertEquals("1.5 KB", MemSize.ofBytes(1500).toString());
   }
 
+  // --- Variable Nachkommastellen ---
+
+  @Test
+  public void humanReadableWithFractionDigits() {
+    assertEquals("2 KB", MemSize.ofBytes(1500).humanReadable(0));
+    assertEquals("1.5 KB", MemSize.ofBytes(1500).humanReadable(1));
+    assertEquals("1 KB", MemSize.ofBytes(1005).humanReadable(0));
+    assertEquals("1 KB", MemSize.ofBytes(1005).humanReadable(1));
+    assertEquals("1.005 KB", MemSize.ofBytes(1005).humanReadable(3));
+    assertEquals("1.5 MB", MemSize.ofBytes(1_465_000).humanReadable(1));
+    assertEquals("1.47 MB", MemSize.ofBytes(1_465_000).humanReadable(2));
+    assertEquals("1.465 MB", MemSize.ofBytes(1_465_000).humanReadable(3));
+    assertEquals("1.465 MB", MemSize.ofBytes(1_465_000).humanReadable(8));
+  }
+
+  @Test
+  public void humanReadableBinaryWithFractionDigits() {
+    MemSize size = MemSize.ofBytes(1500); // 1,46484375 KiB
+    assertEquals("1 KiB", size.humanReadable(MemSizeUnitType.Binary, 0));
+    assertEquals("1.465 KiB", size.humanReadable(MemSizeUnitType.Binary, 3));
+    assertEquals("1.46484 KiB", size.humanReadable(MemSizeUnitType.Binary, 5));
+  }
+
+  @Test
+  public void humanReadableFractionDigitsUseDefaultLocale() {
+    Locale.setDefault(Locale.GERMANY);
+    assertEquals("1,465 MB", MemSize.ofBytes(1_465_000).humanReadable(3));
+    Locale.setDefault(Locale.US);
+    assertEquals("1.465 MB", MemSize.ofBytes(1_465_000).humanReadable(3));
+  }
+
+  @Test
+  public void humanReadableDefaultsStayTheSame() {
+    MemSize size = MemSize.ofBytes(1_465_000);
+    assertEquals(size.humanReadable(MemSize.DEFAULT_HUMAN_READABLE_DIGITS), size.humanReadable());
+    assertEquals(size.humanReadable(MemSizeUnitType.Binary, MemSize.DEFAULT_HUMAN_READABLE_DIGITS),
+        size.humanReadable(MemSizeUnitType.Binary));
+    assertEquals("1.47 MB", size.humanReadable());
+  }
+
+  @Test
+  public void humanReadableBytesHaveNoFractionDigits() {
+    assertEquals("999 B", MemSize.ofBytes(999).humanReadable(5));
+    assertEquals("0 B", MemSize.ofBytes(0).humanReadable(5));
+  }
+
+  @Test
+  public void toStringWithFractionDigits() {
+    assertEquals("2 KB", MemSize.ofBytes(1500).toString(MemSizeUnit.KB, 0));
+    assertEquals("1.5 KB", MemSize.ofBytes(1500).toString(MemSizeUnit.KB, 2));
+    assertEquals("1.01 KB", MemSize.ofBytes(1005).toString(MemSizeUnit.KB, 2));
+    assertEquals("1 KiB", MemSize.ofBytes(1500).toString(MemSizeUnit.KiB, 0));
+    assertEquals("1.46484375 KiB", MemSize.ofBytes(1500).toString(MemSizeUnit.KiB, 8));
+  }
+
+  @Test
+  public void toStringWithMoreThanTenFractionDigits() {
+    MemSize size = MemSize.ofBytes(1_000_000_000_000L); // 1e-12 YB
+    assertEquals("0 YB", size.toString(MemSizeUnit.YB));
+    assertEquals("0.000000000001 YB", size.toString(MemSizeUnit.YB, 15));
+  }
+
+  @Test
+  public void toUnitWithScale() {
+    assertEquals(new BigDecimal("1.46"), MemSize.ofBytes(1500).toUnit(MemSizeUnit.KiB, 2));
+    assertEquals(new BigDecimal("1"), MemSize.ofBytes(1500).toUnit(MemSizeUnit.KiB, 0));
+    assertEquals(new BigDecimal("1.4648437500"), MemSize.ofBytes(1500).toUnit(MemSizeUnit.KiB));
+  }
+
+  @Test
+  public void negativeFractionDigitsThrow() {
+    MemSize size = MemSize.ofBytes(1500);
+    assertThrows(IllegalArgumentException.class, () -> size.humanReadable(-1));
+    assertThrows(IllegalArgumentException.class,
+        () -> size.humanReadable(MemSizeUnitType.Binary, -1));
+    assertThrows(IllegalArgumentException.class, () -> size.toString(MemSizeUnit.KB, -1));
+    assertThrows(IllegalArgumentException.class, () -> size.toUnit(MemSizeUnit.KB, -1));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.ofBytes(0).humanReadable(-1));
+  }
+
   // --- Arithmetik ---
 
   @Test
