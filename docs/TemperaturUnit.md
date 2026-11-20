@@ -76,12 +76,12 @@ bestehenden Formeln passen, nicht, dass die Formeln physikalisch stimmen; das ha
 von Hand nachgerechnet, es steht aber nicht in den Tests. Bei Newton rechnet `fromKelvin` mit
 `.33`, der Faktor ist 100/33, also genau der Kehrwert.
 
-### 5. Umrechnung immer über Kelvin (teilweise erledigt)
+### 5. Umrechnung immer über Kelvin (erledigt)
 Das ist als Zwischenschritt richtig und vermeidet n×n Formeln. Jede Umrechnung enthält dadurch
 aber zwei Rundungsschritte. Die Tests brauchen deshalb Toleranzen. Praktisch unkritisch, aber
 gut zu wissen.
 
-**Umgesetzt (teilweise).** Der Umweg über Kelvin bleibt, er ist richtig. Zwei Dinge wurden geändert:
+**Umgesetzt.** Der Umweg über Kelvin bleibt, er ist richtig. Zwei Dinge wurden geändert:
 
 - Bei gleicher Quell- und Zieleinheit gibt `getValue` den Wert unverändert zurück. Eine
   Stichprobe (8 Einheiten x 5 Werte) hatte gezeigt, dass 22 von 40 Werten nach der Hin- und
@@ -89,7 +89,7 @@ gut zu wissen.
 - Das Javadoc von `getValue` nennt den Umweg über Kelvin, die möglichen Abweichungen in den
   letzten Stellen und den Hinweis, mit Toleranz zu vergleichen.
 
-Bei verschiedenen Einheiten bleiben die zwei Rundungsschritte; sie lassen sich nur mit
+Bei verschiedenen Einheiten bleiben die zwei Rundungsschritte als bewusst akzeptierte Grenze; sie lassen sich nur mit
 direkten Formeln pro Paar vermeiden (n x n), was den Aufwand nicht rechtfertigt.
 
 ### 6. Sprache wird einmal festgelegt
