@@ -322,64 +322,50 @@ public final class MemSize implements Comparable<MemSize> {
    * @throws IllegalArgumentException Wenn maxFractionDigits negativ ist.
    */
   public String humanReadable(MemSizeUnitType type, int maxFractionDigits) {
+    MemSizeUnit unit = bestUnit(type, maxFractionDigits);
+    if (unit == MemSizeUnit.Byte) {
+      // Ganze Bytes, ohne Nachkommastellen und ohne Tausendertrennzeichen
+      return this.bytes + " B";
+    }
+    return toString(unit, maxFractionDigits);
+  }
+
+  /**
+   * Wählt die Einheit für die lesbare Ausgabe: die größte Einheit des Typs, in der der Wert
+   * mindestens 1 ist. Liegt der Wert unter der kleinsten Einheit des Typs (oder ist der Typ
+   * {@link MemSizeUnitType#Byte}), ist es {@link MemSizeUnit#Byte}. Rundet der Wert in der
+   * gewählten Einheit auf die Basis des Typs (z.B. 999,999 KB bei 2 Stellen auf "1000 KB"),
+   * wird die nächstgrößere Einheit genommen ("1 MB"), sofern es eine gibt.
+   *
+   * @param type              Der Einheitentyp (Binary oder Decimal).
+   * @param maxFractionDigits Die Anzahl Nachkommastellen, auf die später gerundet wird.
+   * @throws IllegalArgumentException Wenn maxFractionDigits negativ ist.
+   */
+  MemSizeUnit bestUnit(MemSizeUnitType type, int maxFractionDigits) {
     requireNonNegativeDigits(maxFractionDigits);
-    // Fall 0: Wenn 0 Bytes, direkt zurückgeben
-    if (this.bytes.equals(BigInteger.ZERO)) {
-      return "0 B";
-    }
 
-    // Liste der Einheiten für den gewählten Typ holen
     List<MemSizeUnit> units = MemSizeUnit.of(type);
-
-    // Prüfen, ob die Liste leer ist oder ob Byte-Typ gewählt wurde.
-    // Da MemSizeUnit.of(MemSizeUnitType.Byte) nur [Byte] zurückgibt und
-    // wir Bytes als Basis behandeln, gehen wir in diesem Fall auf den Fallback.
-    if (units.isEmpty() || type == MemSizeUnitType.Byte) {
-      return this.bytes + " B";
+    // Typ Byte liefert nur [Byte]; Bytes sind die Basis und werden nicht umgerechnet.
+    // Das gilt auch für Werte unter der kleinsten Einheit (und damit für 0 Bytes).
+    if (units.isEmpty() || type == MemSizeUnitType.Byte
+        || this.bytes.compareTo(units.getFirst().getFactor()) < 0) {
+      return MemSizeUnit.Byte;
     }
 
-    // Die kleinste Einheit in der Liste ist die erste (KiB oder KB)
-    MemSizeUnit smallestUnitInList = units.getFirst();
-    BigInteger smallestFactor = smallestUnitInList.getFactor();
-
-    // Wenn der Wert kleiner ist als der Faktor der kleinsten Einheit in der Liste,
-    // geben wir einfach Bytes aus.
-    if (this.bytes.compareTo(smallestFactor) < 0) {
-      return this.bytes + " B";
+    // Einheiten von klein nach groß: die größte, in der der Wert >= 1 ist.
+    // Sobald der Wert < 1 ist, sind alle größeren Einheiten noch kleiner.
+    int bestIndex = 0;
+    for (int i = 0; i < units.size() && toUnit(units.get(i)).compareTo(BigDecimal.ONE) >= 0; i++) {
+      bestIndex = i;
     }
 
-    MemSizeUnit bestUnit = null;
-
-    // Wir durchsuchen die Einheiten von klein nach groß.
-    // Wir suchen die größte Einheit, bei der der Wert >= 1 ist.
-    for (MemSizeUnit unit : units) {
-      BigDecimal value = toUnit(unit);
-
-      if (value.compareTo(BigDecimal.ONE) >= 0) {
-        bestUnit = unit;
-      } else {
-        // Sobald der Wert < 1 ist, sind alle größeren Einheiten noch kleiner.
-        break;
-      }
+    // Rundet der Wert auf die nächste Einheit auf, stattdessen diese nehmen.
+    // In der größten Einheit gibt es keine nächste.
+    BigDecimal rounded = toUnit(units.get(bestIndex), maxFractionDigits);
+    if (bestIndex < units.size() - 1 && rounded.compareTo(BigDecimal.valueOf(type.getBase())) >= 0) {
+      bestIndex++;
     }
-
-    // Fallback (sollte aufgrund der vorherigen Byte-Prüfung nicht nötig sein)
-    if (bestUnit == null) {
-      return this.bytes + " B";
-    }
-
-    // Rundet der Wert auf die nächste Einheit auf (z.B. 999,999 KB -> "1000 KB" bei 2 Stellen),
-    // stattdessen die nächstgrößere Einheit nehmen ("1 MB"). In der größten Einheit nicht möglich.
-    BigDecimal value = toUnit(bestUnit, maxFractionDigits);
-    int bestIndex = units.indexOf(bestUnit);
-    if (bestIndex < units.size() - 1 && value.compareTo(BigDecimal.valueOf(type.getBase())) >= 0) {
-      bestUnit = units.get(bestIndex + 1);
-      value = toUnit(bestUnit, maxFractionDigits);
-    }
-
-    // Formatierung: höchstens maxFractionDigits Dezimalstellen, unnötige Nullen entfallen,
-    // locale-abhängig. Direkt auf die gewünschte Stellenzahl rechnen (keine doppelte Rundung).
-    return format(value, maxFractionDigits) + " " + bestUnit.getSymbol();
+    return units.get(bestIndex);
   }
 
   /**

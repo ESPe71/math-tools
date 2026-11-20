@@ -334,6 +334,47 @@ public class MemSizeTest {
   }
 
   @Test
+  public void bestUnitIsByteBelowSmallestUnit() {
+    assertEquals(MemSizeUnit.Byte, MemSize.ofBytes(0).bestUnit(MemSizeUnitType.Decimal, 2));
+    assertEquals(MemSizeUnit.Byte, MemSize.ofBytes(999).bestUnit(MemSizeUnitType.Decimal, 2));
+    assertEquals(MemSizeUnit.Byte, MemSize.ofBytes(1023).bestUnit(MemSizeUnitType.Binary, 2));
+    assertEquals(MemSizeUnit.Byte, MemSize.ofBytes(5000).bestUnit(MemSizeUnitType.Byte, 2));
+  }
+
+  @Test
+  public void bestUnitPicksLargestUnitAboveOne() {
+    assertEquals(MemSizeUnit.KB, MemSize.ofBytes(1000).bestUnit(MemSizeUnitType.Decimal, 2));
+    assertEquals(MemSizeUnit.KB, MemSize.ofBytes(1_500).bestUnit(MemSizeUnitType.Decimal, 2));
+    assertEquals(MemSizeUnit.MB, MemSize.ofBytes(1_000_000).bestUnit(MemSizeUnitType.Decimal, 2));
+    assertEquals(MemSizeUnit.KiB, MemSize.ofBytes(1024).bestUnit(MemSizeUnitType.Binary, 2));
+    assertEquals(MemSizeUnit.MiB, MemSize.ofBytes(1_048_576).bestUnit(MemSizeUnitType.Binary, 2));
+  }
+
+  @Test
+  public void bestUnitRoundsUpToNextUnit() {
+    assertEquals(MemSizeUnit.MB, MemSize.ofBytes(999_999).bestUnit(MemSizeUnitType.Decimal, 2));
+    assertEquals(MemSizeUnit.KB, MemSize.ofBytes(999_999).bestUnit(MemSizeUnitType.Decimal, 3));
+    assertEquals(MemSizeUnit.KB, MemSize.ofBytes(999_994).bestUnit(MemSizeUnitType.Decimal, 2));
+    assertEquals(MemSizeUnit.MiB, MemSize.ofBytes(1_048_575).bestUnit(MemSizeUnitType.Binary, 2));
+  }
+
+  @Test
+  public void bestUnitStopsAtLargestUnit() {
+    MemSize size = MemSize.of(new BigDecimal("999.999"), MemSizeUnit.YB);
+    assertEquals(MemSizeUnit.YB, size.bestUnit(MemSizeUnitType.Decimal, 2));
+    MemSize binary = MemSize.of(new BigDecimal("1023.999"), MemSizeUnit.YiB);
+    assertEquals(MemSizeUnit.YiB, binary.bestUnit(MemSizeUnitType.Binary, 2));
+  }
+
+  @Test
+  public void bestUnitRejectsNegativeFractionDigits() {
+    assertThrows(IllegalArgumentException.class,
+        () -> MemSize.ofBytes(0).bestUnit(MemSizeUnitType.Decimal, -1));
+    assertThrows(IllegalArgumentException.class,
+        () -> MemSize.ofBytes(1500).bestUnit(MemSizeUnitType.Decimal, -1));
+  }
+
+  @Test
   public void humanReadableBytesHaveNoFractionDigits() {
     assertEquals("999 B", MemSize.ofBytes(999).humanReadable(5));
     assertEquals("0 B", MemSize.ofBytes(0).humanReadable(5));
