@@ -1,6 +1,6 @@
 # Klassenübersicht `math-tools`
 
-Das Projekt hat 17 Klassen in vier Paketen unter `de.penetti`. Die einzige Abhängigkeit nach außen ist Jama (Matrizen).
+Das Projekt hat 20 Klassen in vier Paketen unter `de.penetti`. Außen hängt es von Jama (Matrizen) ab. Lombok wird nur beim Kompilieren gebraucht (`provided`).
 
 ### `de.penetti.math`
 
@@ -31,7 +31,10 @@ graph TD
   Length --> LengthUnit
   Resolution --> Length
   Temperature --> TemperatureUnit
-  ByteUnit
+  MemSize --> MemSizeUnit
+  MemSizeUnit --> MemSizeUnitType
+  MemSize -.-> MemSizeUnitType
+  ByteUnit["ByteUnit (deprecated)"] -.-> MemSize
 ```
 
 ### `de.penetti.util`
@@ -74,7 +77,10 @@ Alle Einheiten folgen demselben Muster: ein Enum als Einheit und eine Klasse als
 | `Resolution` | Auflösung aus Punkten und Länge, zum Beispiel dpi, mit `getDotsPerMeter`. |
 | `TemperatureUnit` | Enum für Temperatureinheiten mit Umrechnung. Die Namen kommen aus `temperatureunit*.properties`. |
 | `Temperature` | Temperatur als Wert mit Einheit, `getBaseTemperature`, Vergleich mit Toleranz. |
-| `ByteUnit` | Enum `Binary` (KiB, 1024) und `Decimal` (KB, 1000). `format(long)` liefert eine locale-abhängige Ausgabe wie `1,5 KiB`. |
+| `MemSizeUnit` | Enum der Speichereinheiten: `Byte`, binär (`KiB` bis `YiB`, Basis 1024) und dezimal (`KB` bis `YB`, Basis 1000). Hat Symbol, Typ und Faktor als `BigInteger`. `of(String)` findet eine Einheit ohne Beachtung der Groß-/Kleinschreibung. |
+| `MemSizeUnitType` | Enum `Byte`, `Decimal` (1000) und `Binary` (1024). Gruppiert die Einheiten von `MemSizeUnit`. |
+| `MemSize` | Unveränderliche Speichergröße in Bytes (`BigInteger`, daher ohne Obergrenze durch `long`). Wird aus Zahl und Einheit oder per `parse("1,5 GiB")` gebaut. Hat `add`, `subtract`, `compareTo`, `toUnit` und `humanReadable`. Bruchteile von Bytes werden abgeschnitten. Ausgabe (`humanReadable`, `toString(MemSizeUnit)`) und `parse` richten sich nach der aktuellen Default-Locale. |
+| `ByteUnit` | **Veraltet, stattdessen `MemSize`.** Enum `Binary` (KiB, 1024) und `Decimal` (KB, 1000). `format(long)` liefert eine locale-abhängige Ausgabe wie `1,5 KiB`. |
 
 ## `de.penetti.util`
 
@@ -84,6 +90,6 @@ Alle Einheiten folgen demselben Muster: ein Enum als Einheit und eine Klasse als
 
 ## Zusammenfassung der Struktur
 
-- **Vorlage für Wert und Einheit:** `Length`/`LengthUnit` und `Temperature`/`TemperatureUnit`. `Resolution` baut auf `Length` auf. `ByteUnit` ist eine reine Formatierungshilfe ohne Wertklasse.
-- **Immutable Value Objects:** `Vector`, `Tuple`, `Length`, `Temperature` und `Roman` sind unveränderlich. `Line` und `Polyline` werden über Builder mit Typ-Stufen (`MoveTo`, `Direction`, `Build`) aufgebaut, sodass der Compiler die Aufrufreihenfolge erzwingt.
-- **Ressourcen:** Die Einheitennamen liegen in `.properties`-Dateien mit deutscher (`_de`) und Standardvariante.
+- **Vorlage für Wert und Einheit:** `Length`/`LengthUnit` und `Temperature`/`TemperatureUnit`. `Resolution` baut auf `Length` auf. `MemSize`/`MemSizeUnit` folgen demselben Muster. Der Vorgänger `ByteUnit` war nur eine Formatierungshilfe ohne Wertklasse und ist veraltet.
+- **Immutable Value Objects:** `Vector`, `Tuple`, `Length`, `Temperature`, `MemSize` und `Roman` sind unveränderlich. `Line` und `Polyline` werden über Builder mit Typ-Stufen (`MoveTo`, `Direction`, `Build`) aufgebaut, sodass der Compiler die Aufrufreihenfolge erzwingt.
+- **Ressourcen:** Die Einheitennamen liegen in `.properties`-Dateien mit deutscher (`_de`) und Standardvariante. `MemSizeUnit` nutzt keine Ressourcen, die Symbole stehen fest im Enum.

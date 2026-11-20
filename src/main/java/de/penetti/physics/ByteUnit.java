@@ -16,9 +16,15 @@ import java.text.NumberFormat;
 import java.util.ResourceBundle;
 
 /**
+ * Formatierungshilfe für Speichergrößen.
  *
+ * @deprecated Stattdessen {@link MemSize} verwenden. {@code MemSize} ist ein unveränderlicher Wert-Typ
+ *             mit Parsen, Rechnen und Vergleichen, ohne Größenbeschränkung durch {@code long}.
+ *             Die Formatierung entspricht {@link MemSize#humanReadable(MemSizeUnitType)}
+ *             mit {@link MemSizeUnitType#Binary} bzw. {@link MemSizeUnitType#Decimal}.
  * @author Enrico S. Penetti (enrico@penetti.de)
  */
+@Deprecated
 public enum ByteUnit
 {
   Binary

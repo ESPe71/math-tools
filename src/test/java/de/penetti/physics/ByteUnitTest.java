@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *
  * @author Enrico S. Penetti (enrico@penetti.de)
  */
+@SuppressWarnings("deprecation")
 public class ByteUnitTest
 {
   private Locale defaultLocale;
