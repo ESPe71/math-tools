@@ -93,6 +93,10 @@ public class TemperatureUnitTest
     
     Optional<TemperatureUnit> tu = TemperatureUnit.getBySign("ThereAreNotExistant");
     assertEquals(Optional.empty(), tu);
+
+    // the search is case-sensitive
+    assertEquals(Optional.empty(), TemperatureUnit.getBySign("k"));
+    assertEquals(Optional.empty(), TemperatureUnit.getBySign("°c"));
   }
 
   @Test

@@ -33,7 +33,7 @@ in der beim Start eingestellten Sprache (siehe Punkt 6).
 Typ. Das Schlüsselwort `transient` an den Feldern ist bei Enums wirkungslos
 (Serialisierung läuft über den Namen) und kann entfallen.
 
-### 3. `getBySign` ist umständlich
+### 3. `getBySign` ist umständlich (erledigt)
 - Vier Konstanten (`DEGREE_SIGN`, `SMALL_E`, `SMALL_ACUTE_E`, ...) für drei `replace`-Aufrufe.
 - Bei jedem Aufruf werden alle Einheiten neu normalisiert.
 - Besser: eine `Map`, einmal im `static`-Block aufgebaut. Dabei klären, ob Kleinschreibung
@@ -69,7 +69,7 @@ Es fehlt Javadoc für die Klasse und die öffentlichen Methoden. Wichtig wären 
 ## Empfohlene Reihenfolge
 
 1. Punkt 1 und 2 (klein, risikoarm). *Punkt 1 und 2 sind erledigt.*
-2. Punkt 3 (Map statt Schleife) zusammen mit der Entscheidung zur Groß-/Kleinschreibung.
+2. Punkt 3 (Map statt Schleife) zusammen mit der Entscheidung zur Groß-/Kleinschreibung. *Punkt 3 ist erledigt (Map; Groß-/Kleinschreibung bleibt unterschieden und ist dokumentiert).*
 3. Punkt 4, sobald `Temperature` weitere Differenz-Operationen bekommt.
 4. Punkt 6 nur, wenn Mehrsprachigkeit im Betrieb tatsächlich gebraucht wird.
 5. Punkt 7 laufend.

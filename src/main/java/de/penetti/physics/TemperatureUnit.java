@@ -16,6 +16,8 @@
  */
 package de.penetti.physics;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.DoubleUnaryOperator;
@@ -55,17 +57,25 @@ public enum TemperatureUnit
     this.toKelvin = toKelvin;
   }
 
-  public static Optional<TemperatureUnit> getBySign(String unitSign)
+  private static final Map<String, TemperatureUnit> BY_SIMPLIFIED_SIGN = new HashMap<>();
+  static
   {
-    String us = simplifyUnitSign(unitSign);
     for (TemperatureUnit u : values())
     {
-      if (simplifyUnitSign(u.getUnitSign()).equals(us))
-      {
-        return Optional.of(u);
-      }
+      BY_SIMPLIFIED_SIGN.put(simplifyUnitSign(u.getUnitSign()), u);
     }
-    return Optional.empty();
+  }
+
+  /**
+   * Finds the unit for a unit sign. The degree sign is optional and the special letters are interchangeable with their plain
+   * counterparts, so "°Ré", "Ré", "°Re" and "Re" all find {@link #REAUMUR}. The search is case-sensitive ("c" finds nothing).
+   *
+   * @param unitSign the unit sign, e.g. "°C" or "K"
+   * @return the unit, or empty if no unit has this sign
+   */
+  public static Optional<TemperatureUnit> getBySign(String unitSign)
+  {
+    return Optional.ofNullable(BY_SIMPLIFIED_SIGN.get(simplifyUnitSign(unitSign)));
   }
   private static String simplifyUnitSign(String unitSign)
   {
