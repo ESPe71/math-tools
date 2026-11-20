@@ -1,8 +1,5 @@
 package de.penetti.physics;
 
-import lombok.Getter;
-
-@Getter
 public enum MemSizeUnitType {
   Byte(1),
   Decimal(1000),  // SI
@@ -12,5 +9,9 @@ public enum MemSizeUnitType {
 
   MemSizeUnitType(long base) {
     this.base = base;
+  }
+
+  public long getBase() {
+    return base;
   }
 }

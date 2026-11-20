@@ -1,7 +1,5 @@
 package de.penetti.physics;
 
-import lombok.Getter;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -18,7 +16,6 @@ import java.util.regex.Pattern;
  * Unveränderliche Darstellung einer Speichergröße in Bytes.
  * Unterstützt Werte bis zu 10^40 (weit über Yottabyte hinaus) dank BigInteger.
  */
-@Getter
 public final class MemSize implements Comparable<MemSize> {
 
   /** Höchste Anzahl Nachkommastellen in {@link #humanReadable()}. */
@@ -31,6 +28,15 @@ public final class MemSize implements Comparable<MemSize> {
 
   private MemSize(BigInteger bytes) {
     this.bytes = bytes;
+  }
+
+  /**
+   * Gibt die Größe in Bytes zurück.
+   *
+   * @return Die Anzahl der Bytes, nie null und nie negativ.
+   */
+  public BigInteger getBytes() {
+    return bytes;
   }
 
   /**

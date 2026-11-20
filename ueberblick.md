@@ -1,6 +1,6 @@
 # Klassenübersicht `math-tools`
 
-Das Projekt hat 20 Klassen in vier Paketen unter `de.penetti`. Außen hängt es von Jama (Matrizen) ab. Lombok wird nur beim Kompilieren gebraucht (`provided`).
+Das Projekt hat 20 Klassen in vier Paketen unter `de.penetti`. Die einzige Abhängigkeit nach außen ist Jama (Matrizen).
 
 ### `de.penetti.math`
 

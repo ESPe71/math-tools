@@ -1,13 +1,10 @@
 package de.penetti.physics;
 
-import lombok.Getter;
-
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-@Getter
 public enum MemSizeUnit {
   // Basis
   Byte("B", MemSizeUnitType.Byte, BigInteger.ONE),
@@ -60,6 +57,18 @@ public enum MemSizeUnit {
     this.symbol = symbol;
     this.type = type;
     this.factor = factor;
+  }
+
+  public String getSymbol() {
+    return symbol;
+  }
+
+  public MemSizeUnitType getType() {
+    return type;
+  }
+
+  public BigInteger getFactor() {
+    return factor;
   }
 
   /**
