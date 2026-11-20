@@ -162,8 +162,8 @@ public class MemSizeTest {
     MemSize size = MemSize.of(1234.5, MemSizeUnit.KB);
     for (Locale locale : new Locale[] {Locale.GERMANY, Locale.US, Locale.FRANCE}) {
       Locale.setDefault(locale);
-      assertEquals(size, MemSize.parseLocalized(size.toString(MemSizeUnit.KB)), locale.toString());
-      assertEquals(size, MemSize.parseLocalized(size.toString(MemSizeUnit.Byte)), locale.toString());
+      assertEquals(size, MemSize.parseLocalized(size.format(MemSizeUnit.KB, 10)), locale.toString());
+      assertEquals(size, MemSize.parseLocalized(size.format(MemSizeUnit.Byte, 10)), locale.toString());
     }
   }
 
@@ -202,23 +202,23 @@ public class MemSizeTest {
   }
 
   @Test
-  public void toStringWithUnit() {
-    assertEquals("1 KiB", MemSize.ofBytes(1024).toString(MemSizeUnit.KiB));
-    assertEquals("1.5 KB", MemSize.ofBytes(1500).toString(MemSizeUnit.KB));
-    assertEquals("1,000 B", MemSize.ofBytes(1000).toString(MemSizeUnit.Byte));
-    assertEquals("0 KB", MemSize.ofBytes(0).toString(MemSizeUnit.KB));
-    assertEquals("0.0000000001 YB", MemSize.ofBytes(100_000_000_000_000L).toString(MemSizeUnit.YB));
+  public void formatWithUnit() {
+    assertEquals("1 KiB", MemSize.ofBytes(1024).format(MemSizeUnit.KiB, 10));
+    assertEquals("1.5 KB", MemSize.ofBytes(1500).format(MemSizeUnit.KB, 10));
+    assertEquals("1,000 B", MemSize.ofBytes(1000).format(MemSizeUnit.Byte, 10));
+    assertEquals("0 KB", MemSize.ofBytes(0).format(MemSizeUnit.KB, 10));
+    assertEquals("0.0000000001 YB", MemSize.ofBytes(100_000_000_000_000L).format(MemSizeUnit.YB, 10));
   }
 
   @Test
-  public void toStringWithUnitUsesDefaultLocale() {
+  public void formatUsesDefaultLocale() {
     MemSize size = MemSize.ofBytes(1500);
     Locale.setDefault(Locale.GERMANY);
-    assertEquals("1,5 KB", size.toString(MemSizeUnit.KB));
-    assertEquals("1.500 B", size.toString(MemSizeUnit.Byte));
+    assertEquals("1,5 KB", size.format(MemSizeUnit.KB, 10));
+    assertEquals("1.500 B", size.format(MemSizeUnit.Byte, 10));
     Locale.setDefault(Locale.US);
-    assertEquals("1.5 KB", size.toString(MemSizeUnit.KB));
-    assertEquals("1,500 B", size.toString(MemSizeUnit.Byte));
+    assertEquals("1.5 KB", size.format(MemSizeUnit.KB, 10));
+    assertEquals("1,500 B", size.format(MemSizeUnit.Byte, 10));
   }
 
   @Test
@@ -381,19 +381,19 @@ public class MemSizeTest {
   }
 
   @Test
-  public void toStringWithFractionDigits() {
-    assertEquals("2 KB", MemSize.ofBytes(1500).toString(MemSizeUnit.KB, 0));
-    assertEquals("1.5 KB", MemSize.ofBytes(1500).toString(MemSizeUnit.KB, 2));
-    assertEquals("1.01 KB", MemSize.ofBytes(1005).toString(MemSizeUnit.KB, 2));
-    assertEquals("1 KiB", MemSize.ofBytes(1500).toString(MemSizeUnit.KiB, 0));
-    assertEquals("1.46484375 KiB", MemSize.ofBytes(1500).toString(MemSizeUnit.KiB, 8));
+  public void formatWithFractionDigits() {
+    assertEquals("2 KB", MemSize.ofBytes(1500).format(MemSizeUnit.KB, 0));
+    assertEquals("1.5 KB", MemSize.ofBytes(1500).format(MemSizeUnit.KB, 2));
+    assertEquals("1.01 KB", MemSize.ofBytes(1005).format(MemSizeUnit.KB, 2));
+    assertEquals("1 KiB", MemSize.ofBytes(1500).format(MemSizeUnit.KiB, 0));
+    assertEquals("1.46484375 KiB", MemSize.ofBytes(1500).format(MemSizeUnit.KiB, 8));
   }
 
   @Test
-  public void toStringWithMoreThanTenFractionDigits() {
+  public void formatWithMoreThanTenFractionDigits() {
     MemSize size = MemSize.ofBytes(1_000_000_000_000L); // 1e-12 YB
-    assertEquals("0 YB", size.toString(MemSizeUnit.YB));
-    assertEquals("0.000000000001 YB", size.toString(MemSizeUnit.YB, 15));
+    assertEquals("0 YB", size.format(MemSizeUnit.YB, 10));
+    assertEquals("0.000000000001 YB", size.format(MemSizeUnit.YB, 15));
   }
 
   @Test
@@ -409,7 +409,7 @@ public class MemSizeTest {
     assertThrows(IllegalArgumentException.class, () -> size.humanReadable(-1));
     assertThrows(IllegalArgumentException.class,
         () -> size.humanReadable(MemSizeUnitType.Binary, -1));
-    assertThrows(IllegalArgumentException.class, () -> size.toString(MemSizeUnit.KB, -1));
+    assertThrows(IllegalArgumentException.class, () -> size.format(MemSizeUnit.KB, -1));
     assertThrows(IllegalArgumentException.class, () -> size.toUnit(MemSizeUnit.KB, -1));
     assertThrows(IllegalArgumentException.class, () -> MemSize.ofBytes(0).humanReadable(-1));
   }

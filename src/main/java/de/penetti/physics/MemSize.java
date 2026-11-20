@@ -24,8 +24,8 @@ public final class MemSize implements Comparable<MemSize> {
   /** Höchste Anzahl Nachkommastellen in {@link #humanReadable()}. */
   public static final int DEFAULT_HUMAN_READABLE_DIGITS = 2;
 
-  /** Höchste Anzahl Nachkommastellen in {@link #toString(MemSizeUnit)} und {@link #toUnit(MemSizeUnit)}. */
-  public static final int DEFAULT_TO_STRING_DIGITS = 10;
+  /** Höchste Anzahl Nachkommastellen in {@link #toUnit(MemSizeUnit)}. */
+  public static final int DEFAULT_TO_UNIT_DIGITS = 10;
 
   private final BigInteger bytes;
 
@@ -121,7 +121,7 @@ public final class MemSize implements Comparable<MemSize> {
   /**
    * Wie {@link #parse(String)}, aber Dezimal- und Tausendertrennzeichen richten sich nach der
    * aktuell gesetzten Default-Locale (englisch "1.5 GiB", deutsch "1,5 GiB"). Das Gegenstück zu
-   * {@link #toString(MemSizeUnit)} und {@link #humanReadable()}, die dieselbe Locale nutzen.
+   * {@link #format(MemSizeUnit, int)} und {@link #humanReadable()}, die dieselbe Locale nutzen.
    * Das Ergebnis hängt von der Locale des Rechners ab, deshalb nicht für Konfigurationen
    * verwenden.
    *
@@ -211,7 +211,7 @@ public final class MemSize implements Comparable<MemSize> {
    * @return Die Größe als BigDecimal.
    */
   public BigDecimal toUnit(MemSizeUnit targetUnit) {
-    return toUnit(targetUnit, DEFAULT_TO_STRING_DIGITS);
+    return toUnit(targetUnit, DEFAULT_TO_UNIT_DIGITS);
   }
 
   /**
@@ -237,7 +237,7 @@ public final class MemSize implements Comparable<MemSize> {
     }
   }
 
-  private static String format(BigDecimal value, int maxFractionDigits) {
+  private static String formatNumber(BigDecimal value, int maxFractionDigits) {
     NumberFormat numberFormat = NumberFormat.getNumberInstance();
     numberFormat.setMaximumFractionDigits(maxFractionDigits);
     numberFormat.setRoundingMode(RoundingMode.HALF_UP);
@@ -277,26 +277,19 @@ public final class MemSize implements Comparable<MemSize> {
   }
 
   /**
-   * Gibt die Speichergröße als lesbaren String in der angegebenen Einheit zurück.
+   * Gibt die Speichergröße als String in der angegebenen, festen Einheit zurück (im Gegensatz zu
+   * {@link #humanReadable()}, das die Einheit selbst wählt). Die Zahl wird auf höchstens
+   * {@code maxFractionDigits} Nachkommastellen gerundet (HALF_UP), unnötige Nullen entfallen.
+   * Das Zahlenformat folgt der aktuell gesetzten {@link Locale#getDefault() Default-Locale}.
    *
-   * @param targetUnit Die Ziel-Einheit (z.B. MemSizeUnit.GiB).
-   * @return Ein formatierter String mit bis zu 10 Nachkommastellen (z.B. "1,5 GiB" oder "1.024 B").
-   *         Das Zahlenformat folgt der aktuell gesetzten {@link Locale#getDefault() Default-Locale}.
-   */
-  public String toString(MemSizeUnit targetUnit) {
-    return toString(targetUnit, DEFAULT_TO_STRING_DIGITS);
-  }
-
-  /**
-   * Wie {@link #toString(MemSizeUnit)}, aber mit höchstens {@code maxFractionDigits}
-   * Nachkommastellen (gerundet HALF_UP, unnötige Nullen entfallen).
-   *
-   * @param targetUnit        Die Ziel-Einheit.
+   * @param targetUnit        Die Ziel-Einheit (z.B. MemSizeUnit.GiB).
    * @param maxFractionDigits Die höchste Anzahl Nachkommastellen, mindestens 0.
+   * @return Ein formatierter String (z.B. "1,5 GiB" oder "1.024 B").
    * @throws IllegalArgumentException Wenn maxFractionDigits negativ ist.
    */
-  public String toString(MemSizeUnit targetUnit, int maxFractionDigits) {
-    return format(toUnit(targetUnit, maxFractionDigits), maxFractionDigits) + " " + targetUnit.getSymbol();
+  public String format(MemSizeUnit targetUnit, int maxFractionDigits) {
+    return formatNumber(toUnit(targetUnit, maxFractionDigits), maxFractionDigits)
+        + " " + targetUnit.getSymbol();
   }
 
   /**
@@ -327,7 +320,7 @@ public final class MemSize implements Comparable<MemSize> {
       // Ganze Bytes, ohne Nachkommastellen und ohne Tausendertrennzeichen
       return this.bytes + " B";
     }
-    return toString(unit, maxFractionDigits);
+    return format(unit, maxFractionDigits);
   }
 
   /**
