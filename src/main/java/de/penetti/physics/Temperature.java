@@ -49,7 +49,18 @@ public final class Temperature
   }
 
   /**
+   * Interprets this temperature as a temperature difference and returns its magnitude in Kelvin. Unlike
+   * {@link #getBaseTemperature()} the zero point of the unit is ignored.
+   */
+  private double getDifferenceInKelvin()
+  {
+    return Math.abs(unit.getValue(value, TemperatureUnit.KELVIN) - unit.getValue(0, TemperatureUnit.KELVIN));
+  }
+
+  /**
    * Two {@link Temperature}s are equals, if the base temperature [K] are equals or differ less or equals to delta.
+   * The delta is interpreted as a temperature <em>difference</em>, not as an absolute temperature: only the scale of its unit
+   * is applied, not the offset (a delta of 1 °C is 1 K, a delta of 1 °F is 5/9 K).
    *
    * @param temperature
    * @param delta
@@ -60,7 +71,7 @@ public final class Temperature
   {
     double b1 = getBaseTemperature();
     double b2 = temperature.getBaseTemperature();
-    double d = delta.getBaseTemperature();
+    double d = delta.getDifferenceInKelvin();
     if (Double.compare(b1, b2) == 0)
     {
       return true;

@@ -75,6 +75,28 @@ public class TemperatureTest
   }
 
   @Test
+  public void testEqualsByTemperatureAndDelta_deltaIsDifferenceNotAbsoluteTemperature()
+  {
+    Temperature base = new Temperature(100, TemperatureUnit.KELVIN);
+    Temperature other = new Temperature(100.5, TemperatureUnit.KELVIN);
+
+    // 1 °C as difference is 1 K, so 0.5 K apart is equal; it must not be treated as 274.15 K
+    assertTrue(base.equals(other, new Temperature(1, TemperatureUnit.CELSIUS)));
+    assertFalse(base.equals(new Temperature(105, TemperatureUnit.KELVIN), new Temperature(1, TemperatureUnit.CELSIUS)));
+
+    // 1 °F as difference is 5/9 K
+    assertTrue(base.equals(other, new Temperature(1, TemperatureUnit.FAHRENHEIT)));
+    assertFalse(base.equals(new Temperature(100.6, TemperatureUnit.KELVIN), new Temperature(1, TemperatureUnit.FAHRENHEIT)));
+
+    // zero delta only matches identical temperatures, regardless of unit
+    assertFalse(base.equals(other, new Temperature(0, TemperatureUnit.CELSIUS)));
+    assertTrue(base.equals(base, new Temperature(0, TemperatureUnit.CELSIUS)));
+
+    // negative scale (Delisle) must not produce a negative delta
+    assertTrue(base.equals(other, new Temperature(1, TemperatureUnit.DELISLE)));
+  }
+
+  @Test
   public void testEquals()
   {
     Temperature romerTemp = new Temperature(-83.40375, TemperatureUnit.ROMER); // 100K
