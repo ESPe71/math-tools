@@ -2,7 +2,10 @@ package de.penetti.physics;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Locale;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,6 +14,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MemSizeTest {
+
+  private Locale defaultLocale;
+
+  @BeforeEach
+  public void setUpLocale() {
+    defaultLocale = Locale.getDefault();
+    Locale.setDefault(Locale.ENGLISH);
+  }
+
+  @AfterEach
+  public void tearDownLocale() {
+    Locale.setDefault(defaultLocale);
+  }
 
   // --- Konstruktoren und Factories ---
 
@@ -97,6 +113,47 @@ public class MemSizeTest {
   }
 
   @Test
+  public void parseUsesDefaultLocaleGerman() {
+    Locale.setDefault(Locale.GERMANY);
+    assertEquals(BigInteger.valueOf(1500), MemSize.parse("1,5 KB").getBytes());
+    assertEquals(BigInteger.valueOf(1536), MemSize.parse("1,5 KiB").getBytes());
+    assertEquals(BigInteger.valueOf(500), MemSize.parse(",5 KB").getBytes());
+    assertEquals(BigInteger.valueOf(1_000_000), MemSize.parse("1.000 KB").getBytes());
+    assertEquals(BigInteger.valueOf(1_234_500), MemSize.parse("1.234,5 KB").getBytes());
+    assertEquals(BigInteger.valueOf(2048), MemSize.parse("2048").getBytes());
+  }
+
+  @Test
+  public void parseUsesDefaultLocaleEnglish() {
+    assertEquals(BigInteger.valueOf(1500), MemSize.parse("1.5 KB").getBytes());
+    assertEquals(BigInteger.valueOf(1_000_000), MemSize.parse("1,000 KB").getBytes());
+    assertEquals(BigInteger.valueOf(1_234_500), MemSize.parse("1,234.5 KB").getBytes());
+  }
+
+  @Test
+  public void parseRejectsWrongLocaleNotation() {
+    // Englisch: Komma ist Tausendertrennzeichen und nur in Dreiergruppen gültig
+    assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1,5 KB"));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1,5,5 KB"));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1.5.5 KB"));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1,0000 KB"));
+    // Deutsch: Punkt ist Tausendertrennzeichen und nur in Dreiergruppen gültig
+    Locale.setDefault(Locale.GERMANY);
+    assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1.5 KB"));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1,000.5 KB"));
+  }
+
+  @Test
+  public void parseRoundTripsToString() {
+    MemSize size = MemSize.of(1234.5, MemSizeUnit.KB);
+    for (Locale locale : new Locale[] {Locale.GERMANY, Locale.US, Locale.FRANCE}) {
+      Locale.setDefault(locale);
+      assertEquals(size, MemSize.parse(size.toString(MemSizeUnit.KB)), locale.toString());
+      assertEquals(size, MemSize.parse(size.toString(MemSizeUnit.Byte)), locale.toString());
+    }
+  }
+
+  @Test
   public void parseWithoutUnitIsBytes() {
     assertEquals(BigInteger.valueOf(123), MemSize.parse("123").getBytes());
   }
@@ -134,8 +191,20 @@ public class MemSizeTest {
   public void toStringWithUnit() {
     assertEquals("1 KiB", MemSize.ofBytes(1024).toString(MemSizeUnit.KiB));
     assertEquals("1.5 KB", MemSize.ofBytes(1500).toString(MemSizeUnit.KB));
-    assertEquals("1000 B", MemSize.ofBytes(1000).toString(MemSizeUnit.Byte));
+    assertEquals("1,000 B", MemSize.ofBytes(1000).toString(MemSizeUnit.Byte));
     assertEquals("0 KB", MemSize.ofBytes(0).toString(MemSizeUnit.KB));
+    assertEquals("0.0000000001 YB", MemSize.ofBytes(100_000_000_000_000L).toString(MemSizeUnit.YB));
+  }
+
+  @Test
+  public void toStringWithUnitUsesDefaultLocale() {
+    MemSize size = MemSize.ofBytes(1500);
+    Locale.setDefault(Locale.GERMANY);
+    assertEquals("1,5 KB", size.toString(MemSizeUnit.KB));
+    assertEquals("1.500 B", size.toString(MemSizeUnit.Byte));
+    Locale.setDefault(Locale.US);
+    assertEquals("1.5 KB", size.toString(MemSizeUnit.KB));
+    assertEquals("1,500 B", size.toString(MemSizeUnit.Byte));
   }
 
   @Test
@@ -161,6 +230,25 @@ public class MemSizeTest {
   @Test
   public void humanReadableByteType() {
     assertEquals("5000 B", MemSize.ofBytes(5000).humanReadable(MemSizeUnitType.Byte));
+  }
+
+  @Test
+  public void humanReadableUsesDefaultLocale() {
+    MemSize size = MemSize.ofBytes(1500);
+    Locale.setDefault(Locale.GERMANY);
+    assertEquals("1,5 KB", size.humanReadable());
+    assertEquals("1,5 KB", size.toString());
+    assertEquals("1,46 KiB", size.humanReadable(MemSizeUnitType.Binary));
+    assertEquals("1.000 YB", MemSize.of(1000L, MemSizeUnit.YB).humanReadable());
+    Locale.setDefault(Locale.US);
+    assertEquals("1.5 KB", size.humanReadable());
+    assertEquals("1.46 KiB", size.humanReadable(MemSizeUnitType.Binary));
+  }
+
+  @Test
+  public void humanReadableRoundsHalfUp() {
+    assertEquals("1.01 KB", MemSize.ofBytes(1005).humanReadable());
+    assertEquals("1 KB", MemSize.ofBytes(1004).humanReadable());
   }
 
   @Test

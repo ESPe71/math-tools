@@ -5,11 +5,15 @@ import lombok.Getter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-// TODO: Nach nsis-commons schieben
+
 /**
  * Unveränderliche Darstellung einer Speichergröße in Bytes.
  * Unterstützt Werte bis zu 10^40 (weit über Yottabyte hinaus) dank BigInteger.
@@ -169,7 +173,9 @@ public final class MemSize implements Comparable<MemSize> {
   }
 
   /**
-   * Parst einen String (z.B. "1024 MB", "1.5 GiB") in eine MemSize.
+   * Parst einen String (z.B. "1024 MB", "1.5 GiB") in eine MemSize. Dezimal- und
+   * Tausendertrennzeichen richten sich nach der aktuell gesetzten Default-Locale
+   * (englisch "1.5 GiB", deutsch "1,5 GiB").
    * Nutzt das Pattern aus MemSizeUnit.
    *
    * @param sizeString Der String zur Speicherung.
@@ -195,12 +201,7 @@ public final class MemSize implements Comparable<MemSize> {
 
     // Wir verwenden BigDecimal für das Parsen der Zahl, um Nachkommastellen zu unterstützen,
     // runden dann aber auf Bytes (BigInteger) auf.
-    BigDecimal number;
-    try {
-      number = new BigDecimal(numberStr);
-    } catch (NumberFormatException e) {
-      throw new IllegalArgumentException("Ungültige Zahl in Speichergröße: " + numberStr, e);
-    }
+    BigDecimal number = parseNumber(numberStr);
 
     if (number.signum() < 0) {
       throw new IllegalArgumentException("Speichergröße darf nicht negativ sein");
@@ -214,6 +215,44 @@ public final class MemSize implements Comparable<MemSize> {
     return new MemSize(totalBytes);
   }
 
+  /**
+   * Liest eine Zahl gemäß der aktuell gesetzten Default-Locale: Dezimal- und
+   * Tausendertrennzeichen stammen aus {@link DecimalFormatSymbols}. Das Tausendertrennzeichen
+   * ist nur in Dreiergruppen gültig ("1.000" im Deutschen, "1,000" im Englischen), damit eine
+   * Eingabe in der falschen Schreibweise (z.B. "1,5" bei englischer Locale) mit einer
+   * Fehlermeldung abgelehnt wird, statt still einen falschen Wert zu ergeben.
+   */
+  private static BigDecimal parseNumber(String text) {
+    DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance();
+    String decimal = String.valueOf(symbols.getDecimalSeparator());
+    String grouping = String.valueOf(symbols.getGroupingSeparator());
+
+    String sign = "";
+    String body = text;
+    if (body.startsWith("+") || body.startsWith("-")) {
+      sign = body.substring(0, 1);
+      body = body.substring(1);
+    }
+
+    int decimalAt = body.indexOf(decimal);
+    String integerPart = decimalAt < 0 ? body : body.substring(0, decimalAt);
+    String fractionPart = decimalAt < 0 ? "" : body.substring(decimalAt + 1);
+
+    boolean groupedOk = integerPart.matches(
+        "\\d{1,3}(?:" + Pattern.quote(grouping) + "\\d{3})+");
+    if (groupedOk) {
+      integerPart = integerPart.replace(grouping, "");
+    }
+    if (!integerPart.matches("\\d*") || !fractionPart.matches("\\d*")
+        || (integerPart.isEmpty() && fractionPart.isEmpty())) {
+      throw new IllegalArgumentException("Ungültige Zahl in Speichergröße: " + text
+          + " (erwartet: Dezimaltrennzeichen '" + decimal + "', Tausendertrennzeichen '"
+          + grouping + "')");
+    }
+
+    return new BigDecimal(sign + (integerPart.isEmpty() ? "0" : integerPart)
+        + (fractionPart.isEmpty() ? "" : "." + fractionPart));
+  }
 
   /**
    * Gibt die Größe in der angegebenen Einheit zurück (als BigDecimal).
@@ -282,12 +321,15 @@ public final class MemSize implements Comparable<MemSize> {
    * Gibt die Speichergröße als lesbaren String in der angegebenen Einheit zurück.
    *
    * @param targetUnit Die Ziel-Einheit (z.B. MemSizeUnit.GiB).
-   * @return Ein formatierter String (z.B. "1.5 GiB" oder "1024 B").
+   * @return Ein formatierter String mit bis zu 10 Nachkommastellen (z.B. "1,5 GiB" oder "1.024 B").
+   *         Das Zahlenformat folgt der aktuell gesetzten {@link Locale#getDefault() Default-Locale}.
    */
   public String toString(MemSizeUnit targetUnit) {
     BigDecimal targetValue = toUnit(targetUnit);
-    String targetValueStr = targetValue.stripTrailingZeros().toPlainString();
-    return targetValueStr + " " + targetUnit.getSymbol();
+    NumberFormat numberFormat = NumberFormat.getNumberInstance();
+    numberFormat.setMaximumFractionDigits(10);
+    numberFormat.setRoundingMode(RoundingMode.HALF_UP);
+    return numberFormat.format(targetValue) + " " + targetUnit.getSymbol();
   }
 
   /**
@@ -296,7 +338,8 @@ public final class MemSize implements Comparable<MemSize> {
    * @param type Der zu verwendende Einheitentyp (Binary für KiB/MiB... oder Decimal für KB/MB...).
    *             Ignoriert MemSizeUnitType.Byte, da Byte die Basis ist und immer verwendet wird,
    *             wenn der Wert kleiner als die kleinste Einheit des Typs ist.
-   * @return Der formatierte String.
+   * @return Der formatierte String. Das Zahlenformat folgt der aktuell gesetzten
+   *         {@link Locale#getDefault() Default-Locale} (z.B. "1,5 KiB" für Deutsch, "1.5 KiB" für Englisch).
    */
   public String humanReadable(MemSizeUnitType type) {
     // Fall 0: Wenn 0 Bytes, direkt zurückgeben
@@ -346,12 +389,11 @@ public final class MemSize implements Comparable<MemSize> {
       return this.bytes + " B";
     }
 
-    // Formatierung: Maximal 2 Dezimalstellen, unnötige Nullen entfernen
-    String formattedValue = bestValue.setScale(2, RoundingMode.HALF_UP)
-        .stripTrailingZeros()
-        .toPlainString();
-
-    return formattedValue + " " + bestUnit.getSymbol();
+    // Formatierung: Maximal 2 Dezimalstellen, unnötige Nullen entfallen, locale-abhängig
+    NumberFormat numberFormat = NumberFormat.getNumberInstance();
+    numberFormat.setMaximumFractionDigits(2);
+    numberFormat.setRoundingMode(RoundingMode.HALF_UP);
+    return numberFormat.format(bestValue) + " " + bestUnit.getSymbol();
   }
 
   /**

@@ -48,7 +48,7 @@ public enum MemSizeUnit {
   }
 
   static final Pattern SIZE_PATTERN = Pattern.compile(
-      "^\\s*([+-]?\\d*\\.?\\d+)\\s*(B|KB|MB|GB|TB|PB|EB|ZB|YB|KiB|MiB|GiB|TiB|PiB|EiB|ZiB|YiB)?\\s*$",
+      "^\\s*([+-]?[\\d.,'’\\u00a0\\u202f]*\\d)\\s*(B|KB|MB|GB|TB|PB|EB|ZB|YB|KiB|MiB|GiB|TiB|PiB|EiB|ZiB|YiB)?\\s*$",
       Pattern.CASE_INSENSITIVE
   );
 
