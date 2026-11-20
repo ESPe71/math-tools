@@ -18,7 +18,7 @@ package de.penetti.physics;
 
 import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.function.Function;
+import java.util.function.DoubleUnaryOperator;
 
 /**
  *
@@ -46,9 +46,9 @@ public enum TemperatureUnit
   private static final String SMALL_STROKE_O = "ø";
 
   private final String unitSign;
-  private final transient Function<Double, Double> fromKelvin;
-  private final transient Function<Double, Double> toKelvin;
-  TemperatureUnit(String unitSign, Function<Double, Double> fromKelvin, Function<Double, Double> toKelvin)
+  private final DoubleUnaryOperator fromKelvin;
+  private final DoubleUnaryOperator toKelvin;
+  TemperatureUnit(String unitSign, DoubleUnaryOperator fromKelvin, DoubleUnaryOperator toKelvin)
   {
     this.unitSign = unitSign;
     this.fromKelvin = fromKelvin;
@@ -84,8 +84,8 @@ public enum TemperatureUnit
   }
   public static double getValue(double value, TemperatureUnit fromUnit, TemperatureUnit toUnit)
   {
-    double retValue = fromUnit.toKelvin.apply(value);
-    retValue = toUnit.fromKelvin.apply(retValue);
+    double retValue = fromUnit.toKelvin.applyAsDouble(value);
+    retValue = toUnit.fromKelvin.applyAsDouble(retValue);
     return retValue;
   }
   public String getName()

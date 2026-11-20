@@ -28,7 +28,7 @@ Ein fehlender Schlüssel fällt weiterhin erst zur Laufzeit als `MissingResource
 der vorhandene Test in `TemperatureUnitTest` ruft `getName()` für alle Einheiten auf, aber nur
 in der beim Start eingestellten Sprache (siehe Punkt 6).
 
-### 2. `Function<Double, Double>` statt `DoubleUnaryOperator` (klein, risikoarm)
+### 2. `Function<Double, Double>` statt `DoubleUnaryOperator` (erledigt)
 `Function<Double, Double>` boxt bei jeder Umrechnung. `DoubleUnaryOperator` ist der passende
 Typ. Das Schlüsselwort `transient` an den Feldern ist bei Enums wirkungslos
 (Serialisierung läuft über den Namen) und kann entfallen.
@@ -68,7 +68,7 @@ Es fehlt Javadoc für die Klasse und die öffentlichen Methoden. Wichtig wären 
 
 ## Empfohlene Reihenfolge
 
-1. Punkt 1 und 2 (klein, risikoarm). *Punkt 1 ist erledigt.*
+1. Punkt 1 und 2 (klein, risikoarm). *Punkt 1 und 2 sind erledigt.*
 2. Punkt 3 (Map statt Schleife) zusammen mit der Entscheidung zur Groß-/Kleinschreibung.
 3. Punkt 4, sobald `Temperature` weitere Differenz-Operationen bekommt.
 4. Punkt 6 nur, wenn Mehrsprachigkeit im Betrieb tatsächlich gebraucht wird.
