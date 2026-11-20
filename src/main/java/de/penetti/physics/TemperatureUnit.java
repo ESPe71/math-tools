@@ -29,14 +29,14 @@ import java.util.function.DoubleUnaryOperator;
 @SuppressWarnings("checkstyle:magicnumber")
 public enum TemperatureUnit
 {
-  CELSIUS   ("°C",  d -> d - 273.15,                       d -> d + 273.15),
-  KELVIN    ("K",   d -> d,                                d -> d),
-  FAHRENHEIT("°F",  d -> d * 1.8 - 459.67,                 d -> (d + 459.67) * (5.0 / 9.0)),
-  RANKINE   ("°Ra", d -> d * 1.8,                          d -> d * (5.0 / 9.0)),
-  REAUMUR   ("°Ré", d -> (d - 273.15) * .8,                d -> d * 1.25 + 273.15),
-  ROMER     ("°Rø", d -> (d - 273.15) * (21. / 40.) + 7.5, d -> (d - 7.5) * (40. / 21.) + 273.15),
-  DELISLE   ("°De", d -> (373.15 - d) * 1.5,               d -> 373.15 - d * (2. / 3.)),
-  NEWTON    ("°N",  d -> (d - 273.15) * .33,               d -> d * (100. / 33.) + 273.15);
+  CELSIUS   ("°C",  d -> d - 273.15,                       d -> d + 273.15,                       1.),
+  KELVIN    ("K",   d -> d,                                d -> d,                                1.),
+  FAHRENHEIT("°F",  d -> d * 1.8 - 459.67,                 d -> (d + 459.67) * (5.0 / 9.0),       5. / 9.),
+  RANKINE   ("°Ra", d -> d * 1.8,                          d -> d * (5.0 / 9.0),                  5. / 9.),
+  REAUMUR   ("°Ré", d -> (d - 273.15) * .8,                d -> d * 1.25 + 273.15,                1.25),
+  ROMER     ("°Rø", d -> (d - 273.15) * (21. / 40.) + 7.5, d -> (d - 7.5) * (40. / 21.) + 273.15, 40. / 21.),
+  DELISLE   ("°De", d -> (373.15 - d) * 1.5,               d -> 373.15 - d * (2. / 3.),           -2. / 3.),
+  NEWTON    ("°N",  d -> (d - 273.15) * .33,               d -> d * (100. / 33.) + 273.15,        100. / 33.);
 
   private static final ResourceBundle RESOURCE = ResourceBundle.getBundle("de.penetti.physics.temperatureunit");
 
@@ -50,11 +50,13 @@ public enum TemperatureUnit
   private final String unitSign;
   private final DoubleUnaryOperator fromKelvin;
   private final DoubleUnaryOperator toKelvin;
-  TemperatureUnit(String unitSign, DoubleUnaryOperator fromKelvin, DoubleUnaryOperator toKelvin)
+  private final double kelvinPerDegree;
+  TemperatureUnit(String unitSign, DoubleUnaryOperator fromKelvin, DoubleUnaryOperator toKelvin, double kelvinPerDegree)
   {
     this.unitSign = unitSign;
     this.fromKelvin = fromKelvin;
     this.toKelvin = toKelvin;
+    this.kelvinPerDegree = kelvinPerDegree;
   }
 
   private static final Map<String, TemperatureUnit> BY_SIMPLIFIED_SIGN = new HashMap<>();
@@ -98,6 +100,20 @@ public enum TemperatureUnit
     retValue = toUnit.fromKelvin.applyAsDouble(retValue);
     return retValue;
   }
+  /**
+   * Converts a temperature <em>difference</em> to another unit. Unlike {@link #getValue(double, TemperatureUnit)} only the scale of the
+   * units is applied, not the zero point: a difference of 1 °C is 1 K and 1.8 °F. The result is negative if the units run in opposite
+   * directions, e.g. a difference of 1 K is -1.5 °De.
+   *
+   * @param difference the difference in this unit
+   * @param toUnit the unit of the result
+   * @return the difference in {@code toUnit}
+   */
+  public double convertDifference(double difference, TemperatureUnit toUnit)
+  {
+    return difference * kelvinPerDegree / toUnit.kelvinPerDegree;
+  }
+
   public String getName()
   {
     return RESOURCE.getString("TemperatureUnit.Name." + name());

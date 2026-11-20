@@ -54,7 +54,7 @@ public final class Temperature
    */
   private double getDifferenceInKelvin()
   {
-    return Math.abs(unit.getValue(value, TemperatureUnit.KELVIN) - unit.getValue(0, TemperatureUnit.KELVIN));
+    return Math.abs(unit.convertDifference(value, TemperatureUnit.KELVIN));
   }
 
   /**

@@ -75,6 +75,30 @@ public class TemperatureUnitTest
   }
 
   @Test
+  public void testConvertDifference()
+  {
+    assertEquals(1., TemperatureUnit.CELSIUS.convertDifference(1., TemperatureUnit.KELVIN), PhysicsUtils.DELTA);
+    assertEquals(1.8, TemperatureUnit.CELSIUS.convertDifference(1., TemperatureUnit.FAHRENHEIT), PhysicsUtils.DELTA);
+    assertEquals(1., TemperatureUnit.FAHRENHEIT.convertDifference(1.8, TemperatureUnit.KELVIN), PhysicsUtils.DELTA);
+    assertEquals(-1.5, TemperatureUnit.KELVIN.convertDifference(1., TemperatureUnit.DELISLE), PhysicsUtils.DELTA);
+    assertEquals(0., TemperatureUnit.FAHRENHEIT.convertDifference(0., TemperatureUnit.CELSIUS), PhysicsUtils.DELTA);
+  }
+
+  /** The difference scale of every unit must match the slope of its absolute conversion. */
+  @Test
+  public void testConvertDifference_consistentWithGetValue()
+  {
+    for (TemperatureUnit from : TemperatureUnit.values())
+    {
+      for (TemperatureUnit to : TemperatureUnit.values())
+      {
+        double slope = from.getValue(1., to) - from.getValue(0., to);
+        assertEquals(slope, from.convertDifference(1., to), PhysicsUtils.DELTA, from + " -> " + to);
+      }
+    }
+  }
+
+  @Test
   public void testGetBySign()
   {
     String[] signs = new String[]{"K", "°C", "°F", "°Ra", "°Ré", "°Rø", "°De", "°N",
