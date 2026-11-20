@@ -19,10 +19,7 @@ import java.util.regex.Pattern;
 public final class MemSize implements Comparable<MemSize> {
 
   /** Höchste Anzahl Nachkommastellen in {@link #humanReadable()}. */
-  public static final int DEFAULT_HUMAN_READABLE_DIGITS = 2;
-
-  /** Höchste Anzahl Nachkommastellen in {@link #toUnit(MemSizeUnit)}. */
-  public static final int DEFAULT_TO_UNIT_DIGITS = 10;
+  public static final int DEFAULT_FRACTION_DIGITS = 3;
 
   private final BigInteger bytes;
 
@@ -210,14 +207,16 @@ public final class MemSize implements Comparable<MemSize> {
   }
 
   /**
-   * Gibt die Größe in der angegebenen Einheit zurück (als BigDecimal).
-   * Beispiel: 1024 Bytes in KiB -> 1.0
+   * Gibt die Größe in der angegebenen Einheit exakt zurück (als BigDecimal, ohne Rundung).
+   * Beispiel: 1024 Bytes in KiB -> 1, 1500 Bytes in KiB -> 1.46484375.
    *
-   * @param targetUnit Die Ziel einheit.
+   * @param targetUnit Die Zieleinheit.
    * @return Die Größe als BigDecimal.
    */
   public BigDecimal toUnit(MemSizeUnit targetUnit) {
-    return toUnit(targetUnit, DEFAULT_TO_UNIT_DIGITS);
+    // Alle Faktoren sind Potenzen von 10 oder 2, die Division bricht daher immer ab
+    // (höchstens 80 Nachkommastellen bei YiB) und wirft keine ArithmeticException.
+    return new BigDecimal(this.bytes).divide(new BigDecimal(targetUnit.getFactor()));
   }
 
   /**
@@ -308,7 +307,7 @@ public final class MemSize implements Comparable<MemSize> {
    *         {@link Locale#getDefault() Default-Locale} (z.B. "1,5 KiB" für Deutsch, "1.5 KiB" für Englisch).
    */
   public String humanReadable(MemSizeUnitType type) {
-    return humanReadable(type, DEFAULT_HUMAN_READABLE_DIGITS);
+    return humanReadable(type, DEFAULT_FRACTION_DIGITS);
   }
 
   /**
@@ -351,10 +350,10 @@ public final class MemSize implements Comparable<MemSize> {
       return MemSizeUnit.Byte;
     }
 
-    // Einheiten von klein nach groß: die größte, in der der Wert >= 1 ist.
+    // Einheiten von klein nach groß: die größte, in der der Wert >= 1 ist (Bytes >= Faktor).
     // Sobald der Wert < 1 ist, sind alle größeren Einheiten noch kleiner.
     int bestIndex = 0;
-    for (int i = 0; i < units.size() && toUnit(units.get(i)).compareTo(BigDecimal.ONE) >= 0; i++) {
+    for (int i = 0; i < units.size() && this.bytes.compareTo(units.get(i).getFactor()) >= 0; i++) {
       bestIndex = i;
     }
 

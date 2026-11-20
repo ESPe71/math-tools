@@ -237,7 +237,7 @@ public class MemSizeTest {
     assertEquals("0 B", MemSize.ofBytes(0).humanReadable(MemSizeUnitType.Binary));
     assertEquals("1023 B", MemSize.ofBytes(1023).humanReadable(MemSizeUnitType.Binary));
     assertEquals("1 KiB", MemSize.ofBytes(1024).humanReadable(MemSizeUnitType.Binary));
-    assertEquals("976.56 KiB", MemSize.ofBytes(1_000_000).humanReadable(MemSizeUnitType.Binary));
+    assertEquals("976.563 KiB", MemSize.ofBytes(1_000_000).humanReadable(MemSizeUnitType.Binary));
     assertEquals("1 GiB", MemSize.of(1L, MemSizeUnit.GiB).humanReadable(MemSizeUnitType.Binary));
   }
 
@@ -252,17 +252,19 @@ public class MemSizeTest {
     Locale.setDefault(Locale.GERMANY);
     assertEquals("1,5 KB", size.humanReadable());
     assertEquals("1,5 KB", size.toString());
-    assertEquals("1,46 KiB", size.humanReadable(MemSizeUnitType.Binary));
+    assertEquals("1,465 KiB", size.humanReadable(MemSizeUnitType.Binary));
     assertEquals("1.000 YB", MemSize.of(1000L, MemSizeUnit.YB).humanReadable());
     Locale.setDefault(Locale.US);
     assertEquals("1.5 KB", size.humanReadable());
-    assertEquals("1.46 KiB", size.humanReadable(MemSizeUnitType.Binary));
+    assertEquals("1.465 KiB", size.humanReadable(MemSizeUnitType.Binary));
   }
 
   @Test
   public void humanReadableRoundsHalfUp() {
-    assertEquals("1.01 KB", MemSize.ofBytes(1005).humanReadable());
-    assertEquals("1 KB", MemSize.ofBytes(1004).humanReadable());
+    assertEquals("1.005 KB", MemSize.ofBytes(1005).humanReadable());
+    assertEquals("1.004 KB", MemSize.ofBytes(1004).humanReadable());
+    assertEquals("1.01 KB", MemSize.ofBytes(1005).humanReadable(2));
+    assertEquals("1 KB", MemSize.ofBytes(1004).humanReadable(2));
   }
 
   @Test
@@ -304,18 +306,23 @@ public class MemSizeTest {
   @Test
   public void humanReadableDefaultsStayTheSame() {
     MemSize size = MemSize.ofBytes(1_465_000);
-    assertEquals(size.humanReadable(MemSize.DEFAULT_HUMAN_READABLE_DIGITS), size.humanReadable());
-    assertEquals(size.humanReadable(MemSizeUnitType.Binary, MemSize.DEFAULT_HUMAN_READABLE_DIGITS),
+    assertEquals(size.humanReadable(MemSize.DEFAULT_FRACTION_DIGITS), size.humanReadable());
+    assertEquals(size.humanReadable(MemSizeUnitType.Binary, MemSize.DEFAULT_FRACTION_DIGITS),
         size.humanReadable(MemSizeUnitType.Binary));
-    assertEquals("1.47 MB", size.humanReadable());
+    assertEquals("1.465 MB", size.humanReadable());
   }
 
   @Test
   public void humanReadableRoundsUpToNextUnit() {
-    assertEquals("1 MB", MemSize.ofBytes(999_999).humanReadable());
-    assertEquals("1 MB", MemSize.ofBytes(999_995).humanReadable());
-    assertEquals("999.99 KB", MemSize.ofBytes(999_994).humanReadable());
+    // Standard (3 Stellen): 999,999 KB bleibt in KB, erst 999,9995 MB rundet auf 1 GB
+    assertEquals("999.999 KB", MemSize.ofBytes(999_999).humanReadable());
+    assertEquals("999.999 MB", MemSize.ofBytes(999_999_499).humanReadable());
+    assertEquals("1 GB", MemSize.ofBytes(999_999_500).humanReadable());
     assertEquals("1 GB", MemSize.ofBytes(999_999_999).humanReadable());
+    // Mit 2 Stellen rundet bereits 999,995 KB auf 1 MB
+    assertEquals("1 MB", MemSize.ofBytes(999_999).humanReadable(2));
+    assertEquals("1 MB", MemSize.ofBytes(999_995).humanReadable(2));
+    assertEquals("999.99 KB", MemSize.ofBytes(999_994).humanReadable(2));
     assertEquals("1 MB", MemSize.ofBytes(999_500).humanReadable(0));
     assertEquals("999 KB", MemSize.ofBytes(999_499).humanReadable(0));
     assertEquals("999.5 KB", MemSize.ofBytes(999_499).humanReadable(1));
@@ -323,8 +330,11 @@ public class MemSizeTest {
 
   @Test
   public void humanReadableBinaryRoundsUpToNextUnit() {
-    assertEquals("1 MiB", MemSize.ofBytes(1_048_575).humanReadable(MemSizeUnitType.Binary));
-    assertEquals("1,023.99 KiB", MemSize.ofBytes(1_048_565).humanReadable(MemSizeUnitType.Binary));
+    // Standard (3 Stellen): 1023,99902 KiB bleibt in KiB
+    assertEquals("1,023.999 KiB", MemSize.ofBytes(1_048_575).humanReadable(MemSizeUnitType.Binary));
+    assertEquals("1,023.989 KiB", MemSize.ofBytes(1_048_565).humanReadable(MemSizeUnitType.Binary));
+    // Mit 2 Stellen rundet 1023,99902 KiB auf 1024 und damit auf 1 MiB
+    assertEquals("1 MiB", MemSize.ofBytes(1_048_575).humanReadable(MemSizeUnitType.Binary, 2));
   }
 
   @Test
@@ -400,7 +410,16 @@ public class MemSizeTest {
   public void toUnitWithScale() {
     assertEquals(new BigDecimal("1.46"), MemSize.ofBytes(1500).toUnit(MemSizeUnit.KiB, 2));
     assertEquals(new BigDecimal("1"), MemSize.ofBytes(1500).toUnit(MemSizeUnit.KiB, 0));
-    assertEquals(new BigDecimal("1.4648437500"), MemSize.ofBytes(1500).toUnit(MemSizeUnit.KiB));
+    assertEquals(0, new BigDecimal("1.46484375").compareTo(MemSize.ofBytes(1500).toUnit(MemSizeUnit.KiB)));
+  }
+
+  @Test
+  public void toUnitIsExact() {
+    assertEquals("1.46484375", MemSize.ofBytes(1500).toUnit(MemSizeUnit.KiB).toPlainString());
+    BigDecimal oneByteInYiB = MemSize.ofBytes(1).toUnit(MemSizeUnit.YiB);
+    assertEquals(80, oneByteInYiB.scale());
+    assertEquals(0, BigDecimal.ONE.compareTo(oneByteInYiB.multiply(new BigDecimal(MemSizeUnit.YiB.getFactor()))));
+    assertEquals(0, new BigDecimal("1E-24").compareTo(MemSize.ofBytes(1).toUnit(MemSizeUnit.YB)));
   }
 
   @Test
