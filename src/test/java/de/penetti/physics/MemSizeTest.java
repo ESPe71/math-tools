@@ -28,65 +28,63 @@ public class MemSizeTest {
     Locale.setDefault(defaultLocale);
   }
 
-  // --- Konstruktoren und Factories ---
+  // --- Factories ---
 
   @Test
-  public void constructorBigInteger() {
-    assertEquals(BigInteger.valueOf(42), new MemSize(BigInteger.valueOf(42)).getBytes());
+  public void ofBytesBigInteger() {
+    assertEquals(BigInteger.valueOf(42), MemSize.ofBytes(BigInteger.valueOf(42)).getBytes());
+    assertThrows(NullPointerException.class, () -> MemSize.ofBytes((BigInteger) null));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.ofBytes(BigInteger.valueOf(-1)));
   }
 
   @Test
-  public void constructorBigIntegerInvalid() {
-    assertThrows(NullPointerException.class, () -> new MemSize((BigInteger) null));
-    assertThrows(IllegalArgumentException.class, () -> new MemSize(BigInteger.valueOf(-1)));
+  public void ofBytesLong() {
+    assertEquals(BigInteger.valueOf(7), MemSize.ofBytes(7L).getBytes());
+    assertEquals(BigInteger.ZERO, MemSize.ofBytes(0L).getBytes());
+    assertThrows(IllegalArgumentException.class, () -> MemSize.ofBytes(-1L));
   }
 
   @Test
-  public void constructorLongBytes() {
-    assertEquals(BigInteger.valueOf(7), new MemSize(7L).getBytes());
-    assertThrows(IllegalArgumentException.class, () -> new MemSize(-1L));
-  }
-
-  @Test
-  public void constructorLongWithUnit() {
-    assertEquals(BigInteger.valueOf(2048), new MemSize(2L, MemSizeUnit.KiB).getBytes());
-    assertEquals(BigInteger.valueOf(3_000_000), new MemSize(3L, MemSizeUnit.MB).getBytes());
-    assertThrows(IllegalArgumentException.class, () -> new MemSize(-1L, MemSizeUnit.KB));
-  }
-
-  @Test
-  public void constructorDoubleWithUnit() {
-    assertEquals(BigInteger.valueOf(1536), new MemSize(1.5, MemSizeUnit.KiB).getBytes());
-    assertEquals(BigInteger.valueOf(100), new MemSize(0.1, MemSizeUnit.KB).getBytes());
-    assertThrows(IllegalArgumentException.class, () -> new MemSize(-0.5, MemSizeUnit.KB));
-  }
-
-  @Test
-  public void constructorBigDecimalWithUnit() {
-    assertEquals(BigInteger.valueOf(1_500_000_000L),
-        new MemSize(new BigDecimal("1.5"), MemSizeUnit.GB).getBytes());
-    assertThrows(NullPointerException.class, () -> new MemSize((BigDecimal) null, MemSizeUnit.KB));
-    assertThrows(IllegalArgumentException.class,
-        () -> new MemSize(new BigDecimal("-1"), MemSizeUnit.KB));
-  }
-
-  @Test
-  public void constructorString() {
-    assertEquals(BigInteger.valueOf(1024), new MemSize("1 KiB").getBytes());
-  }
-
-  @Test
-  public void factories() {
-    assertEquals(new MemSize(10L), MemSize.ofBytes(10));
-    assertEquals(new MemSize(10L), MemSize.ofBytes(BigInteger.TEN));
-    assertEquals(new MemSize(1024L), MemSize.of(1L, MemSizeUnit.KiB));
-    assertEquals(new MemSize(1500L), MemSize.of(1.5, MemSizeUnit.KB));
-    assertEquals(new MemSize(1500L), MemSize.of(new BigDecimal("1.5"), MemSizeUnit.KB));
-    assertThrows(IllegalArgumentException.class, () -> MemSize.ofBytes(-1));
+  public void ofLongWithUnit() {
+    assertEquals(BigInteger.valueOf(2048), MemSize.of(2L, MemSizeUnit.KiB).getBytes());
+    assertEquals(BigInteger.valueOf(3_000_000), MemSize.of(3L, MemSizeUnit.MB).getBytes());
+    assertEquals(BigInteger.valueOf(5), MemSize.of(5L, MemSizeUnit.Byte).getBytes());
     assertThrows(IllegalArgumentException.class, () -> MemSize.of(-1L, MemSizeUnit.KB));
-    assertThrows(IllegalArgumentException.class, () -> MemSize.of(-1.0, MemSizeUnit.KB));
+  }
+
+  @Test
+  public void ofDoubleWithUnit() {
+    assertEquals(BigInteger.valueOf(1536), MemSize.of(1.5, MemSizeUnit.KiB).getBytes());
+    assertEquals(BigInteger.valueOf(100), MemSize.of(0.1, MemSizeUnit.KB).getBytes());
+    assertThrows(IllegalArgumentException.class, () -> MemSize.of(-0.5, MemSizeUnit.KB));
+    assertThrows(IllegalArgumentException.class, () -> MemSize.of(Double.NaN, MemSizeUnit.KB));
+    assertThrows(IllegalArgumentException.class,
+        () -> MemSize.of(Double.POSITIVE_INFINITY, MemSizeUnit.KB));
+  }
+
+  @Test
+  public void ofBigDecimalWithUnit() {
+    assertEquals(BigInteger.valueOf(1_500_000_000L),
+        MemSize.of(new BigDecimal("1.5"), MemSizeUnit.GB).getBytes());
+    assertThrows(NullPointerException.class, () -> MemSize.of((BigDecimal) null, MemSizeUnit.KB));
+    assertThrows(NullPointerException.class, () -> MemSize.of(BigDecimal.ONE, null));
     assertThrows(IllegalArgumentException.class,
         () -> MemSize.of(new BigDecimal("-1"), MemSizeUnit.KB));
+  }
+
+  @Test
+  public void ofRejectsNegativeValueEvenIfItTruncatesToZero() {
+    assertThrows(IllegalArgumentException.class,
+        () -> MemSize.of(new BigDecimal("-0.0001"), MemSizeUnit.Byte));
+  }
+
+  @Test
+  public void factoriesAreEquivalent() {
+    assertEquals(MemSize.ofBytes(10L), MemSize.ofBytes(BigInteger.TEN));
+    assertEquals(MemSize.ofBytes(1024L), MemSize.of(1L, MemSizeUnit.KiB));
+    assertEquals(MemSize.ofBytes(1500L), MemSize.of(1.5, MemSizeUnit.KB));
+    assertEquals(MemSize.ofBytes(1500L), MemSize.of(new BigDecimal("1.5"), MemSizeUnit.KB));
+    assertEquals(MemSize.ofBytes(1024L), MemSize.parse("1 KiB"));
   }
 
   @Test
@@ -121,7 +119,7 @@ public class MemSizeTest {
           locale.toString());
       assertEquals(BigInteger.valueOf(1_234_500), MemSize.parse("1,234.5 KB").getBytes(),
           locale.toString());
-      assertEquals(new MemSize("1.5 KB"), MemSize.parse("1.5 KB"), locale.toString());
+      assertEquals(MemSize.parse("1.5 KB"), MemSize.parse("1.5 KB"), locale.toString());
       assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1,5 KB"));
       assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1,5,5 KB"));
       assertThrows(IllegalArgumentException.class, () -> MemSize.parse("1.234,5 KB"));

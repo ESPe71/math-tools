@@ -21,155 +21,80 @@ import java.util.regex.Pattern;
 @Getter
 public final class MemSize implements Comparable<MemSize> {
 
-      private final BigInteger bytes;
+  private final BigInteger bytes;
 
-  /**
-   * Erzeugt eine neue MemSize aus der gegebenen Anzahl an Bytes.
-   *
-   * @param bytes Die Anzahl der Bytes. Darf nicht null sein und muss >= 0 sein.
-   * @throws IllegalArgumentException Wenn bytes null ist oder negativ.
-   */
-  public MemSize(BigInteger bytes) {
-    Objects.requireNonNull(bytes, "Bytes darf nicht null sein");
-    if (bytes.signum() < 0) {
-      throw new IllegalArgumentException("Speichergröße darf nicht negativ sein");
-    }
+  private MemSize(BigInteger bytes) {
     this.bytes = bytes;
   }
 
   /**
-   * Erzeugt eine neue MemSize aus einem long-Wert und einer Einheit.
+   * Factory-Methode für eine Speichergröße in Bytes.
    *
-   * @param value Die Größe in der angegebenen Einheit.
-   * @param unit  Die Einheit.
-   * @throws IllegalArgumentException Wenn value negativ ist.
-   */
-  public MemSize(long value, MemSizeUnit unit) {
-    if (value < 0) {
-      throw new IllegalArgumentException("Wert darf nicht negativ sein");
-    }
-    this.bytes = BigInteger.valueOf(value).multiply(unit.getFactor());
-  }
-
-  /**
-   * Erzeugt eine neue MemSize aus einem double-Wert und einer Einheit.
-   *
-   * @param value Die Größe in der angegebenen Einheit.
-   * @param unit  Die Einheit.
-   * @throws IllegalArgumentException Wenn value negativ ist.
-   */
-  public MemSize(double value, MemSizeUnit unit) {
-    if (value < 0) {
-      throw new IllegalArgumentException("Wert darf nicht negativ sein");
-    }
-    // Verwende String-Konstruktor von BigDecimal zur Vermeidung von Floating-Point-Artefakten
-    BigDecimal bdValue = new BigDecimal(Double.toString(value));
-    this.bytes = bdValue.multiply(new BigDecimal(unit.getFactor())).toBigInteger();
-  }
-
-    /**
-   * Erzeugt eine neue MemSize aus einem BigDecimal-Wert und einer Einheit.
-   *
-   * @param value Die Größe in der angegebenen Einheit.
-   * @param unit  Die Einheit.
-   * @throws IllegalArgumentException Wenn value negativ ist.
-   */
-  public MemSize(BigDecimal value, MemSizeUnit unit) {
-    Objects.requireNonNull(value, "Value darf nicht null sein");
-    if (value.signum() < 0) {
-      throw new IllegalArgumentException("Wert darf nicht negativ sein");
-    }
-    this.bytes = value.multiply(new BigDecimal(unit.getFactor())).toBigInteger();
-  }
-
-  /**
-   * Erzeugt eine neue MemSize aus der gegebenen Anzahl an Bytes (long).
-   *
-   * @param bytes Die Anzahl der Bytes. Muss >= 0 sein.
+   * @param bytes Die Anzahl der Bytes. Darf nicht null sein und muss >= 0 sein.
+   * @throws NullPointerException     Wenn bytes null ist.
    * @throws IllegalArgumentException Wenn bytes negativ ist.
    */
-  public MemSize(long bytes) {
-    if (bytes < 0) {
+  public static MemSize ofBytes(BigInteger bytes) {
+    Objects.requireNonNull(bytes, "Bytes darf nicht null sein");
+    if (bytes.signum() < 0) {
       throw new IllegalArgumentException("Speichergröße darf nicht negativ sein");
     }
-    this.bytes = BigInteger.valueOf(bytes);
-  }
-
-  public MemSize(String memSize) {
-    MemSize ms =  MemSize.parse(memSize);
-    this.bytes = ms.getBytes();
-  }
-
-  /**
-   * Factory-Methode für eine Speichergröße in Bytes.
-   */
-  public static MemSize ofBytes(BigInteger bytes) {
     return new MemSize(bytes);
   }
 
   /**
    * Factory-Methode für eine Speichergröße in Bytes (long).
+   *
+   * @param bytes Die Anzahl der Bytes. Muss >= 0 sein.
+   * @throws IllegalArgumentException Wenn bytes negativ ist.
    */
   public static MemSize ofBytes(long bytes) {
-    if (bytes < 0) {
-      throw new IllegalArgumentException("Bytes darf nicht negativ sein");
-    }
-    return new MemSize(BigInteger.valueOf(bytes));
+    return ofBytes(BigInteger.valueOf(bytes));
   }
 
   /**
    * Factory-Methode für eine Speichergröße basierend auf einem Wert und einer Einheit.
+   * Bruchteile von Bytes werden abgeschnitten.
    *
-   * @param value Die numerische Größe (z.B. 1024).
+   * @param value Die numerische Größe (z.B. 1.5). Darf nicht null und nicht negativ sein.
    * @param unit  Die Einheit (z.B. KiB).
    * @return Die resultierende MemSize in Bytes.
+   * @throws NullPointerException     Wenn value oder unit null ist.
+   * @throws IllegalArgumentException Wenn value negativ ist.
    */
   public static MemSize of(BigDecimal value, MemSizeUnit unit) {
-    // Hinweis: Für maximale Präzision bei sehr großen Dezimalzahlen sollte man
-    // prüfen, ob BigDecimal benötigt wird. Hier verwenden wir BigInteger Multiplikation
-    // für ganzzahlige Inputs, oder wandeln BigDecimal in BigInteger um (mit Rundung).
-
-    // Vereinfachung: Wir nehmen an, value ist eine Ganzzahl oder wir runden auf.
-    // Für eine präzisere Implementierung mit Nachkommastellen müsste man
-    // value.multiply(unit.getFactor()) berechnen.
-
-    // Da MemSize intern BigInteger ist, müssen wir den BigDecimal-Wert in Bytes umrechnen.
-    BigInteger byteValue = value.multiply(new BigDecimal(unit.getFactor())).toBigInteger();
-
-    if (byteValue.signum() < 0) {
-      throw new IllegalArgumentException("Ergebnis darf nicht negativ sein");
+    Objects.requireNonNull(value, "Value darf nicht null sein");
+    Objects.requireNonNull(unit, "Unit darf nicht null sein");
+    if (value.signum() < 0) {
+      throw new IllegalArgumentException("Wert darf nicht negativ sein");
     }
-
-    return new MemSize(byteValue);
+    return new MemSize(value.multiply(new BigDecimal(unit.getFactor())).toBigInteger());
   }
 
   /**
    * Factory-Methode für eine Speichergröße basierend auf einem double-Wert und einer Einheit.
+   * Der Wert wird über seine Dezimaldarstellung umgerechnet, um Fließkomma-Artefakte zu vermeiden
+   * (0.1 KB sind genau 100 Bytes).
+   *
+   * @throws IllegalArgumentException Wenn value negativ, NaN oder unendlich ist.
    */
   public static MemSize of(double value, MemSizeUnit unit) {
-    if (value < 0) {
-      throw new IllegalArgumentException("Wert darf nicht negativ sein");
+    if (Double.isNaN(value) || Double.isInfinite(value) || value < 0) {
+      throw new IllegalArgumentException("Wert muss eine endliche Zahl >= 0 sein: " + value);
     }
-    // Verwende String-Konstruktor von BigDecimal zur Vermeidung von Floating-Point-Artefakten
-    BigDecimal bdValue = new BigDecimal(Double.toString(value));
-    return of(bdValue, unit);
+    return of(new BigDecimal(Double.toString(value)), unit);
   }
 
   /**
    * Factory-Methode für eine Speichergröße basierend auf einem long-Wert und einer Einheit.
-   * Achtung: Kann bei sehr großen Werten zu Überläufen in der Zwischenergebnisberechnung führen,
-   * wenn man nicht vorsichtig ist, aber da unit.getFactor() BigInteger ist, ist das sicher.
    *
-   * @param value Die numerische Größe (z.B. 1024).
+   * @param value Die numerische Größe (z.B. 1024). Darf nicht negativ sein.
    * @param unit  Die Einheit (z.B. KiB).
    * @return Die resultierende MemSize in Bytes.
+   * @throws IllegalArgumentException Wenn value negativ ist.
    */
   public static MemSize of(long value, MemSizeUnit unit) {
-    if (value < 0) {
-      throw new IllegalArgumentException("Wert darf nicht negativ sein");
-    }
-    BigInteger byteValue = BigInteger.valueOf(value).multiply(unit.getFactor());
-    return new MemSize(byteValue);
+    return of(BigDecimal.valueOf(value), unit);
   }
 
   /**
