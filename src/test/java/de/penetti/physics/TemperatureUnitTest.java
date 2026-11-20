@@ -75,6 +75,18 @@ public class TemperatureUnitTest
   }
 
   @Test
+  public void testGetValue_sameUnitReturnsValueUnchanged()
+  {
+    for (TemperatureUnit unit : TemperatureUnit.values())
+    {
+      for (double value : new double[]{98.6, 37., -40.1, .1, 1234.5678})
+      {
+        assertEquals(value, unit.getValue(value, unit), unit.toString());
+      }
+    }
+  }
+
+  @Test
   public void testConvertDifference()
   {
     assertEquals(1., TemperatureUnit.CELSIUS.convertDifference(1., TemperatureUnit.KELVIN), PhysicsUtils.DELTA);

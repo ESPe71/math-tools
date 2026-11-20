@@ -94,8 +94,22 @@ public enum TemperatureUnit
   {
     return getValue(value, this, toUnit);
   }
+  /**
+   * Converts a temperature from one unit to another. Different units are converted via Kelvin, so the result contains the
+   * floating point rounding of two conversion steps and may differ from the exact value in the last digits. Compare converted values
+   * with a tolerance. If both units are the same, the value is returned unchanged.
+   *
+   * @param value the temperature in {@code fromUnit}
+   * @param fromUnit the unit of {@code value}
+   * @param toUnit the unit of the result
+   * @return the temperature in {@code toUnit}
+   */
   public static double getValue(double value, TemperatureUnit fromUnit, TemperatureUnit toUnit)
   {
+    if (fromUnit == toUnit)
+    {
+      return value;
+    }
     double retValue = fromUnit.toKelvin.applyAsDouble(value);
     retValue = toUnit.fromKelvin.applyAsDouble(retValue);
     return retValue;
