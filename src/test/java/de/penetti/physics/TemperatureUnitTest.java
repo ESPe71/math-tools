@@ -16,8 +16,11 @@
  */
 package de.penetti.physics;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,6 +31,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class TemperatureUnitTest
 {
+  private Locale defaultLocale;
+
+  @BeforeEach
+  public void setUpLocale()
+  {
+    defaultLocale = Locale.getDefault();
+    Locale.setDefault(Locale.ENGLISH);
+  }
+
+  @AfterEach
+  public void tearDownLocale()
+  {
+    Locale.setDefault(defaultLocale);
+  }
+
   @Test
   public void testTemperatureUnit_superficial()
   {
@@ -158,20 +176,76 @@ public class TemperatureUnitTest
     assertEquals(98.6, TemperatureUnit.NEWTON.getValue(98.6, TemperatureUnit.NEWTON), PhysicsUtils.DELTA);
   }
 
-    @Test
-  public void testGetName()
+  private static final Locale SPANISH = Locale.forLanguageTag("es");
+
+  private static void assertNames(Locale locale, String... expected)
   {
-    String[] namesDe = new String[]{"Grad Celsius", "Kelvin", "Grad Fahrenheit", "Grad Rankine", "Grad Réaumur",
-                                    "Grad Rømer", "Grad Delisle", "Grad Newton"};
-    String[] namesEn = new String[]{"Degree Celsius", "Kelvin", "Degree Fahrenheit", "Degree Rankine", "Degree Réaumur",
-                                    "Degree Rømer", "Degree Delisle", "Degree Newton"};
     TemperatureUnit[] units = TemperatureUnit.values();
-    for(int i=0; i<units.length; i++)
+    assertEquals(units.length, expected.length);
+    for (int i = 0; i < units.length; i++)
     {
-      String nameDe = namesDe[i];
-      String nameEn = namesEn[i];
-      String name = units[i].getName();
-      assertEquals(true, name.equals(nameDe) || name.equals(nameEn));
+      assertEquals(expected[i], units[i].getName(locale), units[i] + " in " + locale);
     }
+  }
+
+  @Test
+  public void testGetName_english()
+  {
+    assertNames(Locale.ENGLISH, "Degree Celsius", "Kelvin", "Degree Fahrenheit", "Degree Rankine", "Degree Réaumur",
+                "Degree Rømer", "Degree Delisle", "Degree Newton");
+  }
+
+  @Test
+  public void testGetName_german()
+  {
+    assertNames(Locale.GERMAN, "Grad Celsius", "Kelvin", "Grad Fahrenheit", "Grad Rankine", "Grad Réaumur",
+                "Grad Rømer", "Grad Delisle", "Grad Newton");
+  }
+
+  @Test
+  public void testGetName_french()
+  {
+    assertNames(Locale.FRENCH, "Degré Celsius", "Kelvin", "Degré Fahrenheit", "Degré Rankine", "Degré Réaumur",
+                "Degré Rømer", "Degré Delisle", "Degré Newton");
+  }
+
+  @Test
+  public void testGetName_spanish()
+  {
+    assertNames(SPANISH, "Grado Celsius", "Kelvin", "Grado Fahrenheit", "Grado Rankine", "Grado Réaumur",
+                "Grado Rømer", "Grado Delisle", "Grado Newton");
+  }
+
+  @Test
+  public void testGetName_explicitLocaleWinsOverDefaultLocale()
+  {
+    Locale.setDefault(Locale.GERMANY);
+    assertEquals("Degree Celsius", TemperatureUnit.CELSIUS.getName(Locale.ENGLISH));
+    assertEquals("Degré Celsius", TemperatureUnit.CELSIUS.getName(Locale.FRANCE));
+  }
+
+  @Test
+  public void testGetName_unsupportedLanguageFallsBackToDefaultLocale()
+  {
+    Locale.setDefault(Locale.GERMANY);
+    assertEquals("Grad Celsius", TemperatureUnit.CELSIUS.getName(Locale.ITALIAN));
+
+    Locale.setDefault(Locale.ENGLISH);
+    assertEquals("Degree Celsius", TemperatureUnit.CELSIUS.getName(Locale.ITALIAN));
+  }
+
+  @Test
+  public void testGetName_followsDefaultLocale()
+  {
+    Locale.setDefault(Locale.GERMANY);
+    assertEquals("Grad Celsius", TemperatureUnit.CELSIUS.getName());
+    assertEquals("Grad Celsius", TemperatureUnit.CELSIUS.toString());
+
+    Locale.setDefault(Locale.FRANCE);
+    assertEquals("Degré Celsius", TemperatureUnit.CELSIUS.getName());
+    assertEquals("Degré Celsius", TemperatureUnit.CELSIUS.toString());
+
+    Locale.setDefault(Locale.US);
+    assertEquals("Degree Celsius", TemperatureUnit.CELSIUS.getName());
   }
 }

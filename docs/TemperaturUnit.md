@@ -92,11 +92,35 @@ gut zu wissen.
 Bei verschiedenen Einheiten bleiben die zwei Rundungsschritte als bewusst akzeptierte Grenze; sie lassen sich nur mit
 direkten Formeln pro Paar vermeiden (n x n), was den Aufwand nicht rechtfertigt.
 
-### 6. Sprache wird einmal festgelegt
+### 6. Sprache wird einmal festgelegt (erledigt)
 `RESOURCE` ist ein `static final`-Feld; die Locale gilt, die beim ersten Laden der Klasse
 eingestellt ist. `getName()` hat keinen `Locale`-Parameter. Die Bundles für fr und es sind
 vorhanden, aber nicht durch Tests abgedeckt. Wenn mehrere Sprachen wirklich unterstützt werden
 sollen: `getName(Locale)` ergänzen und je Sprache einen Test schreiben.
+
+**Umgesetzt.**
+
+- Das statische `RESOURCE`-Feld ist entfernt. `getName()` liest die Default-Locale bei jedem Aufruf
+  (`getName(Locale.getDefault())`), wie `MemSize`; `toString()` folgt dem. Ein späteres
+  `Locale.setDefault(...)` wirkt also.
+- Neu: `getName(Locale)` für einen Namen in einer bestimmten Sprache (en, de, fr, es).
+- Tests: Namen aller 8 Einheiten in en, de, fr und es sowie das Folgen der Default-Locale. Die
+  Default-Locale wird in `@BeforeEach`/`@AfterEach` gesichert und zurückgesetzt.
+
+**Fallback-Regel.** Es gilt das Java-Standardverhalten von `ResourceBundle`: Unbekannte Sprachen
+(z. B. Italienisch) fallen zuerst auf die Default-Locale zurück, danach auf die Basisdatei
+(Englisch). Damit `getName(Locale.ENGLISH)` auch bei deutscher Default-Locale Englisch liefert,
+gibt es eine eigene `temperatureunit_en.properties` mit demselben Inhalt wie die Basisdatei. Ohne
+sie würde Java für `en` die Default-Locale (z. B. `de`) vor der Basisdatei probieren und
+"Grad Celsius" liefern. Das fiel zunächst nicht auf, weil die Tests die Default-Locale auf
+Englisch setzten; erst ein Gegencheck hat es gezeigt. Zwei Tests sichern es ab
+(`testGetName_explicitLocaleWinsOverDefaultLocale`,
+`testGetName_unsupportedLanguageFallsBackToDefaultLocale`).
+
+Gepflegt werden müssen nun zwei gleiche Dateien (`temperatureunit.properties` und
+`temperatureunit_en.properties`). Ein erster Ansatz mit `ResourceBundle.Control` ohne
+Default-Locale-Fallback wurde wieder verworfen: Er schaltete das übliche Java-Verhalten für alle
+Sprachen ab, nur um diesen einen Fall zu lösen, und funktioniert nicht in benannten Modulen.
 
 ### 7. Dokumentation
 Es fehlt Javadoc für die Klasse und die öffentlichen Methoden. Wichtig wären vor allem:
@@ -109,7 +133,7 @@ Es fehlt Javadoc für die Klasse und die öffentlichen Methoden. Wichtig wären 
 1. Punkt 1 und 2 (klein, risikoarm). *Punkt 1 und 2 sind erledigt.*
 2. Punkt 3 (Map statt Schleife) zusammen mit der Entscheidung zur Groß-/Kleinschreibung. *Punkt 3 ist erledigt (Map; Groß-/Kleinschreibung bleibt unterschieden und ist dokumentiert).*
 3. Punkt 4, sobald `Temperature` weitere Differenz-Operationen bekommt. *Punkt 4 ist erledigt.*
-4. Punkt 6 nur, wenn Mehrsprachigkeit im Betrieb tatsächlich gebraucht wird.
+4. Punkt 6 nur, wenn Mehrsprachigkeit im Betrieb tatsächlich gebraucht wird. *Punkt 6 ist erledigt.*
 5. Punkt 7 laufend.
 
 ## Was ich lassen würde

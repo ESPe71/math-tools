@@ -17,6 +17,7 @@
 package de.penetti.physics;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -38,8 +39,7 @@ public enum TemperatureUnit
   DELISLE   ("°De", d -> (373.15 - d) * 1.5,               d -> 373.15 - d * (2. / 3.),           -2. / 3.),
   NEWTON    ("°N",  d -> (d - 273.15) * .33,               d -> d * (100. / 33.) + 273.15,        100. / 33.);
 
-  private static final ResourceBundle RESOURCE = ResourceBundle.getBundle("de.penetti.physics.temperatureunit");
-
+  private static final String RESOURCE_BASE_NAME = "de.penetti.physics.temperatureunit";
   private static final String DEGREE_SIGN    = "°";
   private static final String EMPTY_STRING   = "";
   private static final String SMALL_E        = "e";
@@ -128,11 +128,33 @@ public enum TemperatureUnit
     return difference * kelvinPerDegree / toUnit.kelvinPerDegree;
   }
 
+  /**
+   * Returns the name of this unit in the current {@link Locale#getDefault() default locale}, e.g. "Degree Celsius" or "Grad Celsius".
+   * The locale is evaluated at each call, so a later {@link Locale#setDefault(Locale)} takes effect.
+   *
+   * @return the localized name
+   * @see #getName(Locale)
+   */
   public String getName()
   {
-    return RESOURCE.getString("TemperatureUnit.Name." + name());
+    return getName(Locale.getDefault());
   }
 
+  /**
+   * Returns the name of this unit in the given locale. Names are available in English, German, French and Spanish. For any
+   * other language the usual {@link ResourceBundle} fallback applies: first the default locale, then English (base bundle).
+   *
+   * @param locale the locale of the name
+   * @return the localized name
+   */
+  public String getName(Locale locale)
+  {
+    return ResourceBundle.getBundle(RESOURCE_BASE_NAME, locale).getString("TemperatureUnit.Name." + name());
+  }
+
+  /**
+   * @return {@link #getName()}, i.e. the name in the current default locale
+   */
   @Override
   public String toString()
   {
