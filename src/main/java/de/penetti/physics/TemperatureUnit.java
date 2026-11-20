@@ -90,7 +90,7 @@ public enum TemperatureUnit
   }
   public String getName()
   {
-    return RESOURCE.getString("TemperatureUnit.Name." + getUnitSign().replace(DEGREE_SIGN, EMPTY_STRING));
+    return RESOURCE.getString("TemperatureUnit.Name." + name());
   }
 
   @Override
